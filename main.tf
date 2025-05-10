@@ -110,12 +110,26 @@ resource "databricks_job" "load_data_job" {
 resource "null_resource" "trigger_job" {
   provisioner "local-exec" {
     command = <<-EOT
-      curl -X POST "${var.databricks_host}/api/2.1/jobs/run-now" \
+      echo "Triggering job ${databricks_job.load_data_job.id} to load data..."
+      response=$(curl -s -w "\n%%{http_code}" -X POST "${var.databricks_host}/api/2.1/jobs/run-now" \
         -H "Authorization: Bearer ${var.databricks_token}" \
         -H "Content-Type: application/json" \
         -d '{
           "job_id": ${databricks_job.load_data_job.id}
-        }'
+        }')
+      
+      status_code=$(echo "$response" | tail -n1)
+      response_body=$(echo "$response" | sed '$d')
+      
+      if [ $status_code -eq 200 ]; then
+        run_id=$(echo $response_body | grep -o '"run_id":[0-9]*' | cut -d':' -f2)
+        echo "Job triggered successfully! Run ID: $run_id"
+        echo "Check job status at: ${var.databricks_host}/#job/${databricks_job.load_data_job.id}/run/$run_id"
+      else
+        echo "Failed to trigger job. Status code: $status_code"
+        echo "Response: $response_body"
+        exit 1
+      fi
     EOT
   }
 
