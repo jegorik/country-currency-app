@@ -105,3 +105,21 @@ resource "databricks_job" "load_data_job" {
     null_resource.start_warehouse
   ]
 }
+
+# Auto execute write data to the table script in databricks workflows jobs
+resource "null_resource" "trigger_job" {
+  provisioner "local-exec" {
+    command = <<-EOT
+      curl -X POST "${var.databricks_host}/api/2.1/jobs/run-now" \
+        -H "Authorization: Bearer ${var.databricks_token}" \
+        -H "Content-Type: application/json" \
+        -d '{
+          "job_id": ${databricks_job.load_data_job.id}
+        }'
+    EOT
+  }
+
+  depends_on = [
+    databricks_job.load_data_job
+  ]
+}
