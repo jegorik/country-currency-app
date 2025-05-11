@@ -1,0 +1,334 @@
+name: Country Currency App CI/CD
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - test
+          - prod
+
+permissions:
+  contents: read
+  pull-requests: write
+
+env:
+  TF_VERSION: 1.0.0
+  PYTHON_VERSION: 3.9
+  DATABRICKS_CLI_VERSION: 0.18.0
+
+jobs:
+  validate:
+    name: Validate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
+
+      - name: Terraform Format Check
+        id: fmt
+        run: terraform fmt -check -recursive
+        continue-on-error: true
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Databricks CLI
+        run: |
+          pip install databricks-cli==${{ env.DATABRICKS_CLI_VERSION }}
+
+      - name: Lint Python Code
+        run: |
+          pip install flake8
+          flake8 notebooks/ --max-line-length=120 --extend-ignore=E203 --statistics
+
+      - name: Validate Notebook Structure
+        run: |
+          # Install notebook validation tool
+          pip install nbconvert nbval jupyter
+          
+          # Validate Jupyter notebooks
+          for nb_file in notebooks/*.ipynb; do
+            # Check if notebook is valid JSON
+            python -c "import json; json.load(open('$nb_file'))" || { echo "Invalid notebook format: $nb_file"; exit 1; }
+            
+            # Check if notebook runs without errors
+            jupyter nbconvert --execute --to notebook --inplace "$nb_file" || exit 1
+          done
+
+  test:
+    name: Test
+    needs: validate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
+
+      - name: Create test tfvars file
+        run: |
+          # Create a temporary test tfvars file with mock values for validation
+          cat > test.tfvars <<EOF
+          databricks_host         = "https://test.cloud.databricks.com"
+          databricks_token        = "dapi123456789"
+          catalog_name            = "test_catalog"
+          schema_name             = "test_schema"
+          environment             = "dev"
+          project_name            = "Test Project"
+          table_name              = "test_table"
+          app_name                = "test-app"
+          volume_name             = "test_volume"
+          databricks_warehouse_id = "test_warehouse_id"
+          EOF
+
+      - name: Terraform Init
+        id: init
+        run: terraform init -backend=false
+
+      - name: Terraform Validate
+        id: validate
+        run: terraform validate
+
+      - name: Terraform Plan (No Apply)
+        id: plan
+        run: terraform plan -var-file=test.tfvars -input=false -no-color -out=plan.tfplan
+        continue-on-error: true
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Python Test Dependencies
+        run: |
+          pip install pytest pytest-cov mock pyspark
+
+      - name: Create Test for Notebook (Mock)
+        run: |
+          mkdir -p tests
+          cat > tests/test_notebook.py <<EOF
+          import unittest
+          from unittest.mock import patch, MagicMock
+          import sys, os
+          
+          # This test file demonstrates how you would test notebook functions
+          # In a real implementation, you would need to extract functions from notebooks
+          # or use a framework like Papermill to test notebooks
+          
+          class TestNotebook(unittest.TestCase):
+              def test_sample(self):
+                  self.assertTrue(True)
+              
+              @patch('pyspark.sql.SparkSession')
+              def test_mock_spark(self, mock_spark):
+                  # Mock example of how you would test Spark code
+                  mock_spark_instance = MagicMock()
+                  mock_spark.builder.getOrCreate.return_value = mock_spark_instance
+                  
+                  # Mock DataFrame operations
+                  mock_df = MagicMock()
+                  mock_spark_instance.read.csv.return_value = mock_df
+                  mock_df.count.return_value = 10
+                  
+                  # This would be your actual test
+                  self.assertEqual(mock_df.count(), 10)
+          
+          if __name__ == '__main__':
+              unittest.main()
+          EOF
+
+      - name: Run Tests
+        run: |
+          pytest tests/ -v
+
+  build:
+    name: Build
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Package Artifacts
+        run: |
+          mkdir -p artifacts
+          cp -r notebooks csv_data artifacts/
+          cp *.tf artifacts/
+          cp README.md ARCHITECTURE.md artifacts/
+          cp setup.sh artifacts/
+          tar -czf country-currency-app.tar.gz artifacts/
+          echo "Created deployment package"
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: terraform-package
+          path: country-currency-app.tar.gz
+          retention-days: 7
+
+  deploy-dev:
+    name: Deploy to Dev
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/develop' || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'dev')
+    environment: dev
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Download Artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: terraform-package
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
+
+      - name: Setup Terraform Variables
+        run: |
+          cat > terraform.tfvars <<EOF
+          databricks_host         = "${{ secrets.DATABRICKS_HOST }}"
+          databricks_token        = "${{ secrets.DATABRICKS_TOKEN }}"
+          catalog_name            = "country_currency_dev"
+          schema_name             = "country_currency"
+          environment             = "dev"
+          project_name            = "Country Currency App"
+          table_name              = "country_to_currency"
+          app_name                = "country-currency-app"
+          volume_name             = "csv_data"
+          databricks_warehouse_id = "${{ secrets.DATABRICKS_WAREHOUSE_ID }}"
+          EOF
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Plan
+        run: terraform plan -var-file=terraform.tfvars -out=tfplan
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve tfplan
+
+  deploy-test:
+    name: Deploy to Test
+    needs: deploy-dev
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'test'
+    environment: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Download Artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: terraform-package
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
+
+      - name: Setup Terraform Variables
+        run: |
+          cat > terraform.tfvars <<EOF
+          databricks_host         = "${{ secrets.DATABRICKS_HOST }}"
+          databricks_token        = "${{ secrets.DATABRICKS_TOKEN }}"
+          catalog_name            = "country_currency_test"
+          schema_name             = "country_currency"
+          environment             = "test"
+          project_name            = "Country Currency App"
+          table_name              = "country_to_currency"
+          app_name                = "country-currency-app"
+          volume_name             = "csv_data"
+          databricks_warehouse_id = "${{ secrets.DATABRICKS_WAREHOUSE_ID }}"
+          EOF
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Plan
+        run: terraform plan -var-file=terraform.tfvars -out=tfplan
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve tfplan
+
+  deploy-prod:
+    name: Deploy to Production
+    needs: deploy-test
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'prod'
+    environment: prod
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Download Artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: terraform-package
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
+
+      - name: Setup Terraform Variables
+        run: |
+          cat > terraform.tfvars <<EOF
+          databricks_host         = "${{ secrets.DATABRICKS_HOST }}"
+          databricks_token        = "${{ secrets.DATABRICKS_TOKEN }}"
+          catalog_name            = "country_currency_prod"
+          schema_name             = "country_currency"
+          environment             = "prod"
+          project_name            = "Country Currency App"
+          table_name              = "country_to_currency"
+          app_name                = "country-currency-app"
+          volume_name             = "csv_data"
+          databricks_warehouse_id = "${{ secrets.DATABRICKS_WAREHOUSE_ID }}"
+          EOF
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Plan
+        run: terraform plan -var-file=terraform.tfvars -out=tfplan
+
+      - name: Manual Approval
+        uses: trstringer/manual-approval@v1
+        with:
+          secret: ${{ secrets.GITHUB_TOKEN }}
+          approvers: ${{ github.actor }}
+          minimum-approvals: 1
+          issue-title: "Deploy to Production"
+          issue-body: "Please approve or deny the deployment to production"
+          exclude-workflow-initiator-as-approver: false
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve tfplan

@@ -1,0 +1,151 @@
+name: Release Management
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - '**.md'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (leave empty for automatic versioning)'
+        required: false
+        type: string
+      release_type:
+        description: 'Release type'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - major
+          - minor
+          - patch
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+      
+      - name: Install semantic-release
+        run: npm install -g semantic-release @semantic-release/changelog @semantic-release/git @semantic-release/github
+      
+      - name: Determine Version
+        id: version
+        run: |
+          if [[ "${{ github.event.inputs.version }}" != "" ]]; then
+            echo "VERSION=${{ github.event.inputs.version }}" >> $GITHUB_ENV
+            echo "Using manually specified version: ${{ github.event.inputs.version }}"
+          else
+            CURRENT_VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+            echo "Current version: $CURRENT_VERSION"
+            
+            # Remove the v prefix if present
+            CURRENT_VERSION=${CURRENT_VERSION#v}
+            
+            # Split version into components
+            IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT_VERSION"
+            
+            # Increment based on release type
+            if [[ "${{ github.event.inputs.release_type }}" == "major" ]]; then
+              MAJOR=$((MAJOR + 1))
+              MINOR=0
+              PATCH=0
+            elif [[ "${{ github.event.inputs.release_type }}" == "minor" ]]; then
+              MINOR=$((MINOR + 1))
+              PATCH=0
+            else
+              PATCH=$((PATCH + 1))
+            fi
+            
+            NEW_VERSION="v${MAJOR}.${MINOR}.${PATCH}"
+            echo "NEW_VERSION=${NEW_VERSION}" >> $GITHUB_ENV
+            echo "Calculated new version: ${NEW_VERSION}"
+          fi
+      
+      - name: Create Release Notes
+        id: release_notes
+        run: |
+          # Get commits since last tag
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          
+          if [[ -z "$LAST_TAG" ]]; then
+            # First release - use all commits
+            echo "CHANGELOG=$(git log --pretty=format:"* %s (%h)" --no-merges)" >> $GITHUB_ENV
+          else
+            # Get commits since last tag
+            echo "CHANGELOG=$(git log ${LAST_TAG}..HEAD --pretty=format:"* %s (%h)" --no-merges)" >> $GITHUB_ENV
+          fi
+      
+      - name: Create GitHub Release
+        id: create_release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ env.NEW_VERSION || env.VERSION }}
+          name: Release ${{ env.NEW_VERSION || env.VERSION }}
+          body: |
+            ## What's Changed
+            
+            ${{ env.CHANGELOG }}
+            
+            ## Installation
+            
+            ```bash
+            # Clone the repository
+            git clone https://github.com/${{ github.repository }}
+            cd $(basename ${{ github.repository }})
+            git checkout ${{ env.NEW_VERSION || env.VERSION }}
+            
+            # Deploy with Terraform
+            terraform init
+            terraform apply -var-file=environments/prod.tfvars
+            ```
+          draft: false
+          prerelease: false
+      
+      - name: Update Version in Files
+        run: |
+          VERSION_WITHOUT_V="${NEW_VERSION#v}"
+          
+          # Update version in relevant files
+          if [[ -f "version.tf" ]]; then
+            sed -i "s/version = \".*\"/version = \"${VERSION_WITHOUT_V}\"/" version.tf
+          fi
+          
+          # Create/update version file
+          echo "${VERSION_WITHOUT_V}" > VERSION
+          
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add VERSION
+          git commit -m "chore: Bump version to ${NEW_VERSION}" || echo "No changes to commit"
+          git push
+      
+      - name: Create Release PR for Next Development Version
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "chore: Start next development cycle after ${{ env.NEW_VERSION || env.VERSION }}"
+          title: "Start next development cycle after ${{ env.NEW_VERSION || env.VERSION }}"
+          body: |
+            This PR updates version references to start the next development cycle after the release of ${{ env.NEW_VERSION || env.VERSION }}.
+            
+            [Automated by GitHub Actions]
+          branch: next-dev-cycle
+          base: main
+          labels: automated,release

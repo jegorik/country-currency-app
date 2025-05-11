@@ -13,17 +13,58 @@ The application follows this workflow:
 ## Directory Structure
 ```
 country-currency-app/
-├── main.tf              # Main Terraform configuration file
-├── provider.tf          # Terraform provider configuration
-├── variables.tf         # Variable declarations
-├── terraform.tfvars     # Variable values (credentials & configuration)
-├── outputs.tf           # Outputs (newly created)
-├── csv_data/            # Source data
+├── main.tf                # Main Terraform configuration file
+├── provider.tf            # Terraform provider configuration
+├── variables.tf           # Variable declarations
+├── terraform.tfvars       # Variable values (credentials & configuration)
+├── outputs.tf             # Output values from Terraform
+├── backend.tf             # Terraform state backend configuration
+├── Makefile               # Automation for common tasks
+├── setup.sh               # Initial setup script
+├── validate_notebook.sh   # Script to validate notebook execution
+├── .github/               # GitHub Actions configuration
+│   └── workflows/       
+│       └── ci-cd.yml      # CI/CD pipeline definition
+├── environments/          # Environment-specific configurations 
+│   ├── dev.tfvars         # Development environment variables
+│   ├── test.tfvars        # Test environment variables
+│   └── prod.tfvars        # Production environment variables
+├── compliance/            # Terraform compliance tests
+│   └── basic_checks.feature  # Policy-as-code tests
+├── csv_data/              # Source data
 │   └── country_code_to_currency_code.csv
-├── notebooks/           # Databricks notebooks
-│   └── load_data_notebook.py
-└── README.md            # Project documentation
+├── notebooks/             # Databricks notebooks
+│   └── load_data_notebook_jupyter.ipynb  # Data processing notebook in Jupyter format
+├── tests/                 # Test files for application code
+│   └── test_load_data_notebook.py
+├── README.md              # Project documentation
+├── ARCHITECTURE.md        # Detailed system architecture
+├── CONTRIBUTING.md        # Contribution guidelines
+├── CI_CD.md               # CI/CD process documentation
+├── MIGRATION.md           # Migration instructions
+└── TROUBLESHOOTING.md     # Common issues and solutions
 ```
+
+## Project Documentation
+
+This project includes several documentation files to help users understand, use, and contribute to the project:
+
+- **README.md** - This file, containing project overview and setup instructions
+- **ARCHITECTURE.md** - Details about the system architecture and component interactions
+- **CONTRIBUTING.md** - Guidelines for contributing to the project
+- **CI_CD.md** - Information about the CI/CD pipeline and processes
+- **MIGRATION.md** - Instructions for migrating data between environments
+- **TROUBLESHOOTING.md** - Solutions for common issues and problems
+
+## Troubleshooting
+
+For common issues and their solutions, please refer to the [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) document. Common issues include:
+
+1. **Notebook Format Issues** - Problems with notebook execution format in Databricks
+2. **Table Schema Conflicts** - Issues with table schema discrepancies between Terraform and Databricks
+3. **Authentication Issues** - Problems with Databricks API tokens and authentication
+4. **Terraform Apply/Destroy Problems** - Common Terraform operational issues
+5. **SQL Warehouse Connectivity** - Issues connecting to SQL warehouses
 
 ## Prerequisites
 - Terraform v1.0.0+
@@ -31,19 +72,40 @@ country-currency-app/
 - Existing SQL warehouse in Databricks
 
 ## Setup Instructions
+
+### Local Development Setup
 1. Configure your Databricks credentials in `terraform.tfvars` or use environment variables
-2. Initialize Terraform:
+2. Run the setup script to prepare your environment:
+   ```bash
+   ./setup.sh
    ```
-   terraform init
+   
+3. Or use the Makefile for common operations:
+   ```bash
+   # Initialize Terraform
+   make init
+   
+   # Plan changes for development environment
+   make ENV=dev plan
+   
+   # Apply changes
+   make ENV=dev apply
    ```
-3. Review the execution plan:
-   ```
-   terraform plan
-   ```
-4. Apply the configuration:
-   ```
-   terraform apply
-   ```
+
+### CI/CD Setup
+1. Fork this repository in GitHub
+2. Configure the following secrets in your GitHub repository:
+   - `DATABRICKS_HOST`: Your Databricks workspace URL
+   - `DATABRICKS_TOKEN`: Your Databricks API token
+   - `DATABRICKS_WAREHOUSE_ID`: ID of your SQL warehouse
+   
+3. The CI/CD pipeline will automatically run on pull requests and pushes to main branches
+4. To manually trigger a deployment:
+   - Go to the "Actions" tab in GitHub
+   - Select the "Country Currency App CI/CD" workflow
+   - Click "Run workflow"
+   - Select the target environment
+   - Click "Run workflow"
 
 ## Resources Created
 - Databricks schema for organizing data
@@ -62,11 +124,31 @@ If the job fails to load data:
 2. Verify the CSV file format is correct
 3. Review the job run logs in the Databricks UI
 
+## CI/CD Pipeline
+
+This project uses GitHub Actions to automate testing, building, and deployment processes. The CI/CD pipeline ensures consistent, reliable deployments across multiple environments.
+
+### Pipeline Stages
+
+1. **Validate**: Code linting and Terraform validation
+2. **Test**: Run automated tests and verify infrastructure plans
+3. **Build**: Package resources for deployment
+4. **Deploy**: Environment-specific deployments (dev, test, prod)
+
+### Deployment Environments
+
+- **Development**: Automatic deployment on pushes to the `develop` branch
+- **Test**: Manual trigger with validation checks
+- **Production**: Manual trigger with approval requirements
+
+For complete details on the CI/CD implementation, see [CI_CD.md](CI_CD.md).
+
 ## Contributing
 Please follow the standard Git workflow:
 1. Fork the repository
 2. Create a feature branch
 3. Submit a pull request
+4. Ensure CI/CD pipeline passes all checks
 
 ## License
 [Specify your license here]

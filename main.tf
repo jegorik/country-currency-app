@@ -14,7 +14,20 @@ data "databricks_sql_warehouse" "existing_warehouse" {
 # Ensure the SQL warehouse is running before proceeding with data operations
 resource "null_resource" "start_warehouse" {
   provisioner "local-exec" {
-    command = "databricks warehouses start ${var.databricks_warehouse_id}"
+    command = <<-EOT
+      echo "Starting SQL warehouse ${var.databricks_warehouse_id}..."
+      curl -s -X POST "${var.databricks_host}/api/2.0/sql/warehouses/${var.databricks_warehouse_id}/start" \
+        -H "Authorization: Bearer ${var.databricks_token}" \
+        -H "Content-Type: application/json"
+      
+      # Check result
+      if [ $? -eq 0 ]; then
+        echo "SQL warehouse start request successful"
+      else
+        echo "Failed to start SQL warehouse"
+        exit 1
+      fi
+    EOT
   }
 }
 
@@ -93,6 +106,11 @@ resource "databricks_sql_table" "table" {
     type    = "INT"
     comment = "ISO 4217 numeric currency code"
   }
+  column {
+    name    = "processing_time"
+    type    = "TIMESTAMP"
+    comment = "Timestamp when the data was processed"
+  }
 
   depends_on = [databricks_schema.schema, null_resource.start_warehouse]
 }
@@ -111,9 +129,9 @@ resource "databricks_file" "csv_data" {
 
 # Create and deploy the data processing notebook to Databricks workspace
 resource "databricks_notebook" "load_data_notebook" {
-  source   = "${path.module}/notebooks/load_data_notebook.py"
+  source   = "${path.module}/notebooks/load_data_notebook_jupyter.ipynb"
   path     = "/Shared/${var.app_name}/load_data_notebook"
-  format   = "SOURCE"
+  format   = "JUPYTER"
   language = "PYTHON"
 }
 

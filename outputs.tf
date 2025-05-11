@@ -30,3 +30,8 @@ output "volume_path" {
   description = "Path to the volume where CSV data is stored"
   value       = databricks_file.csv_data.path
 }
+
+output "notebook_path" {
+  description = "Path to the deployed notebook in Databricks workspace"
+  value       = databricks_notebook.load_data_notebook.path
+}
