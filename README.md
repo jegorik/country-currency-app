@@ -49,6 +49,15 @@ country-currency-app/
 
 This project includes several documentation files to help users understand, use, and contribute to the project:
 
+- [User Guide](docs/USER_GUIDE.md) - How to use the Country Currency App
+- [Architecture](ARCHITECTURE.md) - Detailed system architecture
+- [Component Diagram](docs/COMPONENT_DIAGRAM.md) - Visual representation of system components
+- [Notebook Validation](docs/NOTEBOOK_VALIDATION.md) - How notebook validation works in CI/CD
+- [CI/CD Process](CI_CD.md) - CI/CD pipeline documentation
+- [Contributing Guidelines](CONTRIBUTING.md) - How to contribute to this project
+- [Migration Guide](MIGRATION.md) - Instructions for migrating between versions
+- [Troubleshooting](TROUBLESHOOTING.md) - Common issues and solutions
+
 - **README.md** - This file, containing project overview and setup instructions
 - **ARCHITECTURE.md** - Details about the system architecture and component interactions
 - **CONTRIBUTING.md** - Guidelines for contributing to the project

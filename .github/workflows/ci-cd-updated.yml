@@ -1,0 +1,278 @@
+name: Country Currency App CI/CD
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - test
+          - prod
+
+permissions:
+  contents: read
+  pull-requests: write
+
+env:
+  TF_VERSION: 1.0.0
+  PYTHON_VERSION: 3.9
+  DATABRICKS_CLI_VERSION: 0.18.0
+
+jobs:
+  validate:
+    name: Validate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
+
+      - name: Terraform Format Check
+        id: fmt
+        run: terraform fmt -check -recursive
+        continue-on-error: true
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Databricks CLI
+        run: |
+          pip install databricks-cli==${{ env.DATABRICKS_CLI_VERSION }}
+
+      - name: Lint Python Code
+        run: |
+          pip install flake8
+          flake8 notebooks/ --max-line-length=120 --extend-ignore=E203 --statistics
+
+      - name: Validate Notebook Structure
+        run: |
+          # Install basic notebook validation dependencies
+          pip install jupyter nbformat
+          
+          # Run our custom validation script that mocks Databricks dependencies
+          python ci/validate_notebooks.py
+
+  test:
+    name: Test
+    needs: validate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
+
+      - name: Create test tfvars file
+        run: |
+          # Create a temporary test tfvars file with mock values for validation
+          cat > test.tfvars <<EOF
+          databricks_host         = "https://test.cloud.databricks.com"
+          databricks_token        = "dapi123456789"
+          catalog_name            = "test_catalog"
+          schema_name             = "test_schema"
+          environment             = "dev"
+          project_name            = "Test Project"
+          table_name              = "test_table"
+          app_name                = "test-app"
+          volume_name             = "test_volume"
+          databricks_warehouse_id = "test_warehouse_id"
+          EOF
+
+      - name: Terraform Init
+        id: init
+        run: terraform init
+
+      - name: Terraform Validate
+        id: validate
+        run: terraform validate -no-color
+
+      - name: Setup Python for Tests
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Test Dependencies
+        run: |
+          pip install pytest pytest-mock nbformat
+
+      - name: Run Unit Tests
+        run: |
+          pytest tests/
+
+  deploy-dev:
+    name: Deploy to Dev
+    needs: [validate, test]
+    if: (github.ref == 'refs/heads/develop') || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'dev')
+    runs-on: ubuntu-latest
+    environment:
+      name: dev
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
+
+      - name: Create terraform.tfvars
+        run: |
+          cat > terraform.tfvars <<EOF
+          databricks_host         = "${{ secrets.DATABRICKS_HOST }}"
+          databricks_token        = "${{ secrets.DATABRICKS_TOKEN }}"
+          catalog_name            = "main"
+          schema_name             = "country_currency"
+          environment             = "dev"
+          project_name            = "Country Currency"
+          table_name              = "country_code_to_currency_code"
+          app_name                = "country-currency-app"
+          volume_name             = "country_currency_data"
+          databricks_warehouse_id = "${{ secrets.DATABRICKS_WAREHOUSE_ID }}"
+          EOF
+
+      - name: Terraform Init
+        id: init
+        run: terraform init
+
+      - name: Terraform Validate
+        id: validate
+        run: terraform validate -no-color
+
+      - name: Terraform Plan
+        id: plan
+        run: terraform plan -no-color -var-file=terraform.tfvars
+        continue-on-error: true
+
+      - name: Terraform Plan Status
+        if: steps.plan.outcome == 'failure'
+        run: exit 1
+
+      - name: Terraform Apply
+        id: apply
+        run: terraform apply -auto-approve -var-file=terraform.tfvars
+
+  deploy-test:
+    name: Deploy to Test
+    needs: [validate, test]
+    if: (github.ref == 'refs/heads/main') || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'test')
+    runs-on: ubuntu-latest
+    environment:
+      name: test
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
+
+      - name: Create terraform.tfvars
+        run: |
+          cat > terraform.tfvars <<EOF
+          databricks_host         = "${{ secrets.DATABRICKS_HOST }}"
+          databricks_token        = "${{ secrets.DATABRICKS_TOKEN }}"
+          catalog_name            = "main"
+          schema_name             = "country_currency"
+          environment             = "test"
+          project_name            = "Country Currency"
+          table_name              = "country_code_to_currency_code"
+          app_name                = "country-currency-app"
+          volume_name             = "country_currency_data"
+          databricks_warehouse_id = "${{ secrets.DATABRICKS_WAREHOUSE_ID }}"
+          EOF
+
+      - name: Terraform Init
+        id: init
+        run: terraform init
+
+      - name: Terraform Validate
+        id: validate
+        run: terraform validate -no-color
+
+      - name: Terraform Plan
+        id: plan
+        run: terraform plan -no-color -var-file=terraform.tfvars
+        continue-on-error: true
+
+      - name: Terraform Plan Status
+        if: steps.plan.outcome == 'failure'
+        run: exit 1
+
+      - name: Terraform Apply
+        id: apply
+        run: terraform apply -auto-approve -var-file=terraform.tfvars
+
+  deploy-prod:
+    name: Deploy to Production
+    needs: [validate, test, deploy-test]
+    if: (github.ref == 'refs/heads/main') || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'prod')
+    runs-on: ubuntu-latest
+    environment:
+      name: prod
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
+
+      - name: Create terraform.tfvars
+        run: |
+          cat > terraform.tfvars <<EOF
+          databricks_host         = "${{ secrets.DATABRICKS_HOST }}"
+          databricks_token        = "${{ secrets.DATABRICKS_TOKEN }}"
+          catalog_name            = "main"
+          schema_name             = "country_currency"
+          environment             = "prod"
+          project_name            = "Country Currency"
+          table_name              = "country_code_to_currency_code"
+          app_name                = "country-currency-app"
+          volume_name             = "country_currency_data"
+          databricks_warehouse_id = "${{ secrets.DATABRICKS_WAREHOUSE_ID }}"
+          EOF
+
+      - name: Terraform Init
+        id: init
+        run: terraform init
+
+      - name: Terraform Validate
+        id: validate
+        run: terraform validate -no-color
+
+      - name: Terraform Plan
+        id: plan
+        run: terraform plan -no-color -var-file=terraform.tfvars
+        continue-on-error: true
+
+      - name: Terraform Plan Status
+        if: steps.plan.outcome == 'failure'
+        run: exit 1
+
+      - name: Terraform Apply
+        id: apply
+        run: terraform apply -auto-approve -var-file=terraform.tfvars

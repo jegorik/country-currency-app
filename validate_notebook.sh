@@ -1,18 +1,39 @@
 #!/bin/bash
 
-# Script to validate notebook execution after format fix
-# This should be run after applying terraform changes
+# Script to validate notebook format and syntax locally
+# This script can be run before committing changes to ensure CI pipeline won't fail
 
-echo "Validating notebook execution after format changes..."
+set -e
 
-# Get the notebook path and job ID from terraform output
-NOTEBOOK_PATH=$(terraform output -raw notebook_path 2>/dev/null || echo "/Shared/country-currency-app/load_data_notebook")
-JOB_ID=$(terraform output -raw job_id 2>/dev/null)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-if [ -z "$JOB_ID" ]; then
-  echo "Error: Could not retrieve job ID from terraform output"
-  echo "Will check notebook status only"
-fi
+echo "===== Databricks Notebook Validator ====="
+echo "Validating notebooks in: $SCRIPT_DIR/notebooks"
+
+# Make sure Python requirements are installed
+echo "Checking for required Python packages..."
+pip3 install --quiet jupyter nbformat || {
+  echo "Failed to install required Python packages. Please install them manually:"
+  echo "pip3 install jupyter nbformat"
+  exit 1
+}
+
+# Run the validation script
+echo "Running validation script..."
+python3 "$SCRIPT_DIR/ci/validate_notebooks.py"
+
+# If we have Databricks credentials, we can also check the notebook on Databricks
+if [ ! -z "$DATABRICKS_HOST" ] && [ ! -z "$DATABRICKS_TOKEN" ]; then
+  echo "Databricks credentials found, checking notebook on Databricks..."
+  
+  # Get the notebook path and job ID from terraform output
+  NOTEBOOK_PATH=$(terraform output -raw notebook_path 2>/dev/null || echo "/Shared/country-currency-app/load_data_notebook")
+  JOB_ID=$(terraform output -raw job_id 2>/dev/null)
+  
+  if [ -z "$JOB_ID" ]; then
+    echo "Note: Could not retrieve job ID from terraform output"
+    echo "Will check notebook status only"
+  fi
 
 # Check if the notebook exists in Databricks
 echo "Checking notebook existence at path: $NOTEBOOK_PATH"
@@ -69,4 +90,10 @@ else
   echo "No job ID available for testing, skipping job execution test"
 fi
 
-echo "Notebook validation complete. Check results in Databricks workspace."
+echo "Databricks notebook validation complete."
+else
+  echo "Databricks credentials not found, skipping remote validation."
+fi
+
+echo "✅ All notebooks validated successfully!"
+echo "You can now commit and push your changes."

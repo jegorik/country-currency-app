@@ -11,7 +11,7 @@ variable "environment" {
   type        = string
   validation {
     condition     = contains(["dev", "test", "prod"], var.environment)
-    error_message = "Environment must be dev, test, or prod."
+    error_message = "Environment must be one of: dev, test, or prod."
   }
 }
 
@@ -29,7 +29,7 @@ variable "databricks_host" {
   type        = string
   validation {
     condition     = can(regex("^https://", var.databricks_host))
-    error_message = "Databricks host must start with https://"
+    error_message = "The Databricks host URL must start with https:// for secure communication."
   }
 }
 
@@ -58,7 +58,7 @@ variable "schema_name" {
   type        = string
   validation {
     condition     = can(regex("^[a-zA-Z0-9_]+$", var.schema_name))
-    error_message = "Schema name must contain only alphanumeric characters and underscores."
+    error_message = "The schema name must contain only alphanumeric characters and underscores."
   }
 }
 
@@ -67,7 +67,7 @@ variable "table_name" {
   type        = string
   validation {
     condition     = can(regex("^[a-zA-Z0-9_]+$", var.table_name))
-    error_message = "Table name must contain only alphanumeric characters and underscores."
+    error_message = "The table name must contain only alphanumeric characters and underscores."
   }
 }
 

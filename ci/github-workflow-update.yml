@@ -1,0 +1,69 @@
+name: Country Currency App CI/CD
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - test
+          - prod
+
+permissions:
+  contents: read
+  pull-requests: write
+
+env:
+  TF_VERSION: 1.0.0
+  PYTHON_VERSION: 3.9
+  DATABRICKS_CLI_VERSION: 0.18.0
+
+jobs:
+  validate:
+    name: Validate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
+
+      - name: Terraform Format
+        run: terraform fmt -check
+
+      - name: Terraform Validate
+        run: terraform validate -no-color
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Databricks CLI
+        run: |
+          pip install databricks-cli==${{ env.DATABRICKS_CLI_VERSION }}
+
+      - name: Lint Python Code
+        run: |
+          pip install flake8
+          flake8 notebooks/ --max-line-length=120 --extend-ignore=E203 --statistics
+
+      - name: Validate Notebook Structure
+        run: |
+          # Install basic notebook validation tools
+          pip install jupyter nbformat
+          
+          # Run our custom validation script
+          python ci/validate_notebooks.py
