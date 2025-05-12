@@ -44,7 +44,7 @@ jobs:
 
       - name: Terraform Format Check
         id: fmt
-        run: terraform fmt -check -recursive
+        run: terraform fmt -check -recursive terraform/
         continue-on-error: true
 
       - name: Setup Python
@@ -86,7 +86,7 @@ jobs:
       - name: Create test tfvars file
         run: |
           # Create a temporary test tfvars file with mock values for validation
-          cat > test.tfvars <<EOF
+          cat > terraform/test.tfvars <<EOF
           databricks_host         = "https://test.cloud.databricks.com"
           databricks_token        = "dapi123456789"
           catalog_name            = "test_catalog"
@@ -101,11 +101,15 @@ jobs:
 
       - name: Terraform Init
         id: init
-        run: terraform init
+        run: |
+          cd terraform
+          terraform init
 
       - name: Terraform Validate
         id: validate
-        run: terraform validate -no-color
+        run: |
+          cd terraform
+          terraform validate -no-color
 
       - name: Setup Python for Tests
         uses: actions/setup-python@v4
@@ -140,7 +144,7 @@ jobs:
 
       - name: Create terraform.tfvars
         run: |
-          cat > terraform.tfvars <<EOF
+          cat > terraform/terraform.tfvars <<EOF
           databricks_host         = "${{ secrets.DATABRICKS_HOST }}"
           databricks_token        = "${{ secrets.DATABRICKS_TOKEN }}"
           catalog_name            = "main"
@@ -155,15 +159,21 @@ jobs:
 
       - name: Terraform Init
         id: init
-        run: terraform init
+        run: |
+          cd terraform
+          terraform init
 
       - name: Terraform Validate
         id: validate
-        run: terraform validate -no-color
+        run: |
+          cd terraform
+          terraform validate -no-color
 
       - name: Terraform Plan
         id: plan
-        run: terraform plan -no-color -var-file=terraform.tfvars
+        run: |
+          cd terraform
+          terraform plan -no-color -var-file=terraform.tfvars
         continue-on-error: true
 
       - name: Terraform Plan Status
@@ -172,7 +182,9 @@ jobs:
 
       - name: Terraform Apply
         id: apply
-        run: terraform apply -auto-approve -var-file=terraform.tfvars
+        run: |
+          cd terraform
+          terraform apply -auto-approve -var-file=terraform.tfvars
 
   deploy-test:
     name: Deploy to Test
@@ -193,7 +205,7 @@ jobs:
 
       - name: Create terraform.tfvars
         run: |
-          cat > terraform.tfvars <<EOF
+          cat > terraform/terraform.tfvars <<EOF
           databricks_host         = "${{ secrets.DATABRICKS_HOST }}"
           databricks_token        = "${{ secrets.DATABRICKS_TOKEN }}"
           catalog_name            = "main"
@@ -208,15 +220,21 @@ jobs:
 
       - name: Terraform Init
         id: init
-        run: terraform init
+        run: |
+          cd terraform
+          terraform init
 
       - name: Terraform Validate
         id: validate
-        run: terraform validate -no-color
+        run: |
+          cd terraform
+          terraform validate -no-color
 
       - name: Terraform Plan
         id: plan
-        run: terraform plan -no-color -var-file=terraform.tfvars
+        run: |
+          cd terraform
+          terraform plan -no-color -var-file=terraform.tfvars
         continue-on-error: true
 
       - name: Terraform Plan Status
@@ -225,7 +243,9 @@ jobs:
 
       - name: Terraform Apply
         id: apply
-        run: terraform apply -auto-approve -var-file=terraform.tfvars
+        run: |
+          cd terraform
+          terraform apply -auto-approve -var-file=terraform.tfvars
 
   deploy-prod:
     name: Deploy to Production
@@ -246,7 +266,7 @@ jobs:
 
       - name: Create terraform.tfvars
         run: |
-          cat > terraform.tfvars <<EOF
+          cat > terraform/terraform.tfvars <<EOF
           databricks_host         = "${{ secrets.DATABRICKS_HOST }}"
           databricks_token        = "${{ secrets.DATABRICKS_TOKEN }}"
           catalog_name            = "main"
@@ -261,15 +281,21 @@ jobs:
 
       - name: Terraform Init
         id: init
-        run: terraform init
+        run: |
+          cd terraform
+          terraform init
 
       - name: Terraform Validate
         id: validate
-        run: terraform validate -no-color
+        run: |
+          cd terraform
+          terraform validate -no-color
 
       - name: Terraform Plan
         id: plan
-        run: terraform plan -no-color -var-file=terraform.tfvars
+        run: |
+          cd terraform
+          terraform plan -no-color -var-file=terraform.tfvars
         continue-on-error: true
 
       - name: Terraform Plan Status
@@ -278,4 +304,6 @@ jobs:
 
       - name: Terraform Apply
         id: apply
-        run: terraform apply -auto-approve -var-file=terraform.tfvars
+        run: |
+          cd terraform
+          terraform apply -auto-approve -var-file=terraform.tfvars

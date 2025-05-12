@@ -40,7 +40,8 @@ jobs:
 
       - name: Create test tfvars file
         run: |
-          cat > test.tfvars <<EOF
+          # Create test.tfvars file in the terraform directory
+          cat > terraform/test.tfvars <<EOF
           databricks_host         = "https://test.cloud.databricks.com"
           databricks_token        = "dapi123456789"
           catalog_name            = "test_catalog"
@@ -54,19 +55,29 @@ jobs:
           EOF
 
       - name: Terraform Init
-        run: terraform init -backend=false
+        run: |
+          # Change to terraform directory before running commands
+          cd terraform
+          terraform init -backend=false
 
       - name: Terraform Plan
-        run: terraform plan -var-file=test.tfvars -out=terraform.tfplan
+        run: |
+          # Change to terraform directory before running commands
+          cd terraform
+          terraform plan -var-file=test.tfvars -out=terraform.tfplan
 
       - name: Convert Terraform Plan
-        run: terraform show -json terraform.tfplan > terraform-plan.json
+        run: |
+          # Change to terraform directory to show the plan
+          cd terraform
+          terraform show -json terraform.tfplan > terraform-plan.json
 
       - name: Run Terraform Compliance
         id: compliance
         run: |
           echo "Running terraform-compliance checks..."
-          terraform-compliance -f compliance/ -p terraform-plan.json
+          # Use correct paths: terraform-plan.json is in terraform directory, but compliance is in root
+          terraform-compliance -f compliance/ -p terraform/terraform-plan.json
         continue-on-error: true
 
       - name: Post Compliance Results to PR

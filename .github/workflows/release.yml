@@ -112,8 +112,9 @@ jobs:
             git checkout ${{ env.NEW_VERSION || env.VERSION }}
             
             # Deploy with Terraform
+            cd terraform
             terraform init
-            terraform apply -var-file=environments/prod.tfvars
+            terraform apply -var-file=../environments/prod.tfvars
             ```
           draft: false
           prerelease: false

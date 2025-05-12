@@ -10,15 +10,28 @@ YELLOW='\033[0;33m'
 NC='\033[0m' # No Color
 
 # Read values from terraform.tfvars
-if [ -f ../terraform/terraform.tfvars ]; then
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+TERRAFORM_DIR="$SCRIPT_DIR/../terraform"
+
+# Change to terraform directory
+echo -e "${YELLOW}Changing to terraform directory...${NC}"
+cd "$TERRAFORM_DIR" || {
+    echo -e "${RED}Error: Could not change to terraform directory${NC}"
+    exit 1
+}
+
+if [ -f "terraform.tfvars" ]; then
   echo -e "${YELLOW}Reading configuration from terraform.tfvars...${NC}"
-  DATABRICKS_HOST=$(grep databricks_host ../terraform/terraform.tfvars | cut -d '=' -f2 | tr -d ' "' | tr -d "'")
-  DATABRICKS_TOKEN=$(grep databricks_token ../terraform/terraform.tfvars | cut -d '=' -f2 | tr -d ' "' | tr -d "'")
-  DATABRICKS_WAREHOUSE_ID=$(grep databricks_warehouse_id ../terraform/terraform.tfvars | cut -d '=' -f2 | tr -d ' "' | tr -d "'")
+  DATABRICKS_HOST=$(grep databricks_host "terraform.tfvars" | cut -d '=' -f2 | tr -d ' "' | tr -d "'")
+  DATABRICKS_TOKEN=$(grep databricks_token "terraform.tfvars" | cut -d '=' -f2 | tr -d ' "' | tr -d "'")
+  DATABRICKS_WAREHOUSE_ID=$(grep databricks_warehouse_id "terraform.tfvars" | cut -d '=' -f2 | tr -d ' "' | tr -d "'")
 else
   echo -e "${RED}Error: terraform.tfvars not found${NC}"
   exit 1
 fi
+
+# Return to original directory
+cd "$SCRIPT_DIR" || true
 
 # Extract hostname from URL
 DATABRICKS_URL=$(echo $DATABRICKS_HOST | sed 's/https:\/\///')
@@ -87,6 +100,6 @@ fi
 
 echo -e "\n${YELLOW}Connection test summary:${NC}"
 echo "1. Check your network connection to Databricks"
-echo "2. Verify the Databricks host URL in terraform.tfvars"
+echo "2. Verify the Databricks host URL in the terraform/terraform.tfvars file"
 echo "3. Confirm your API token has the necessary permissions"
 echo "4. Ensure the warehouse ID is correct and you have access to it"
