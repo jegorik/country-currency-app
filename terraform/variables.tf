@@ -95,3 +95,14 @@ variable "tags" {
     managed_by  = "terraform"
   }
 }
+
+#----------------------------------------------
+# CI/CD Configuration Options
+#----------------------------------------------
+
+# Variable to skip validation in CI/CD environments
+variable "skip_validation" {
+  description = "Whether to skip validation steps that require connectivity"
+  type        = bool
+  default     = false
+}

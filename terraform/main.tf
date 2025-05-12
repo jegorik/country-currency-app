@@ -7,12 +7,17 @@
 #----------------------------------------------
 
 # Reference existing SQL warehouse to be used for data loading operations
+# Use count to conditionally create this resource based on skip_validation
 data "databricks_sql_warehouse" "existing_warehouse" {
+  count = var.skip_validation ? 0 : 1
   id = var.databricks_warehouse_id
 }
 
 # Ensure the SQL warehouse is running before proceeding with data operations
+# Use count to conditionally create this resource based on skip_validation
 resource "null_resource" "start_warehouse" {
+  count = var.skip_validation ? 0 : 1
+  
   provisioner "local-exec" {
     command = <<-EOT
       echo "Starting SQL warehouse ${var.databricks_warehouse_id}..."
@@ -72,7 +77,7 @@ resource "databricks_sql_table" "table" {
   name               = var.table_name
   table_type         = "MANAGED"
   data_source_format = "DELTA"
-  warehouse_id       = data.databricks_sql_warehouse.existing_warehouse.id
+  warehouse_id       = var.skip_validation ? var.databricks_warehouse_id : data.databricks_sql_warehouse.existing_warehouse[0].id
   comment            = "Table containing country and currency code mappings"
 
   # Column definitions based on CSV structure
@@ -163,8 +168,8 @@ resource "databricks_job" "load_data_job" {
         schema_name    = databricks_schema.schema.name
         table_name     = databricks_sql_table.table.name
         csv_path       = databricks_file.csv_data.path
-        warehouse_name = data.databricks_sql_warehouse.existing_warehouse.name
-        warehouse_id   = data.databricks_sql_warehouse.existing_warehouse.id
+        warehouse_name = var.skip_validation ? "Mock Warehouse" : data.databricks_sql_warehouse.existing_warehouse[0].name
+        warehouse_id   = var.databricks_warehouse_id
       }
     }
 
@@ -187,6 +192,9 @@ resource "databricks_job" "load_data_job" {
 
 # Automatically trigger the job to load data after all resources are created
 resource "null_resource" "trigger_job" {
+  # Only run this when not in skip_validation mode (like in CI/CD testing)
+  count = var.skip_validation ? 0 : 1
+  
   provisioner "local-exec" {
     command = <<-EOT
       echo "Triggering job ${databricks_job.load_data_job.id} to load country-currency data..."
