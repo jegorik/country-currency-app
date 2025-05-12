@@ -112,7 +112,7 @@ jobs:
 
       - name: Install Test Dependencies
         run: |
-          pip install pytest pytest-mock nbformat
+          pip install pytest pytest-mock nbformat pyspark==3.3.0 pyarrow
 
       - name: Run Unit Tests
         run: |

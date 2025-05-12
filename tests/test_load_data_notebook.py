@@ -2,12 +2,17 @@ import unittest
 from unittest.mock import patch, MagicMock
 import sys
 import os
+import importlib.util
 
 # For direct Python imports - would need to extract functions from notebook for real testing
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../notebooks')))
 
 # JSON parsing for Jupyter notebooks
 import json
+
+# Check if pyspark is available and skip tests if not
+pyspark_spec = importlib.util.find_spec("pyspark")
+PYSPARK_AVAILABLE = pyspark_spec is not None
 
 class TestLoadDataNotebook(unittest.TestCase):
     """
@@ -28,7 +33,15 @@ class TestLoadDataNotebook(unittest.TestCase):
             'table_name': 'test_table',
             'csv_path': '/test/path/data.csv'
         }
+        
+    def test_notebook_environment(self):
+        """Test that the notebook environment configuration is valid"""
+        self.assertIn('catalog_name', self.mock_databricks_env)
+        self.assertIn('schema_name', self.mock_databricks_env)
+        self.assertIn('table_name', self.mock_databricks_env)
+        self.assertIn('csv_path', self.mock_databricks_env)
     
+    @unittest.skipIf(not PYSPARK_AVAILABLE, "PySpark is not installed")
     @patch('pyspark.sql.SparkSession')
     def test_csv_loading(self, mock_spark):
         """Test CSV loading functionality"""
@@ -58,6 +71,7 @@ class TestLoadDataNotebook(unittest.TestCase):
         )
         self.assertEqual(result_df.count(), 10)
     
+    @unittest.skipIf(not PYSPARK_AVAILABLE, "PySpark is not installed")
     @patch('pyspark.sql.SparkSession')
     def test_delta_table_write(self, mock_spark):
         """Test writing to Delta table functionality"""

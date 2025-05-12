@@ -118,6 +118,11 @@ For common issues and their solutions, please refer to the [TROUBLESHOOTING.md](
    ```bash
    ./scripts/run_tests.sh
    ```
+   
+   This script offers options for:
+   - Testing Databricks connection
+   - Validating notebooks
+   - Running Python unit tests
 
 ### CI/CD Setup
 1. Fork this repository in GitHub
@@ -168,7 +173,9 @@ This project uses GitHub Actions to automate testing, building, and deployment p
 - **Test**: Manual trigger with validation checks
 - **Production**: Manual trigger with approval requirements
 
-For complete details on the CI/CD implementation, see [CI_CD.md](CI_CD.md).
+For complete details on the CI/CD implementation, see:
+- [CI_CD.md](docs/CI_CD.md) - General CI/CD configuration
+- [CI_CD_TESTING.md](docs/CI_CD_TESTING.md) - CI/CD testing configuration and troubleshooting
 
 ## Contributing
 Please follow the standard Git workflow:
