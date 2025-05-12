@@ -157,7 +157,7 @@ jobs:
           app_name                = "country-currency-app"
           volume_name             = "country_currency_data"
           databricks_warehouse_id = "${{ secrets.DATABRICKS_WAREHOUSE_ID }}"
-          skip_validation         = true
+          skip_validation         = false
           EOF
 
       - name: Terraform Init
@@ -188,6 +188,31 @@ jobs:
         run: |
           cd terraform
           terraform apply -auto-approve -var-file=terraform.tfvars
+          
+      - name: Trigger Data Load Job
+        run: |
+          # Extract job ID from Terraform output
+          cd terraform
+          JOB_ID=$(terraform output -raw job_id)
+          
+          echo "Manually triggering job $JOB_ID to load country-currency data for dev environment..."
+          response=$(curl -s -w "\n%%{http_code}" -X POST "${{ secrets.DATABRICKS_HOST }}/api/2.1/jobs/run-now" \
+            -H "Authorization: Bearer ${{ secrets.DATABRICKS_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d "{\"job_id\": $JOB_ID}")
+          
+          status_code=$(echo "$response" | tail -n1)
+          response_body=$(echo "$response" | sed '$d')
+          
+          if [ "$status_code" -eq 200 ]; then
+            run_id=$(echo "$response_body" | grep -o '"run_id":[0-9]*' | cut -d':' -f2)
+            echo "Job triggered successfully! Run ID: $run_id"
+          else
+            echo "Failed to trigger job. Status code: $status_code"
+            echo "Response: $response_body"
+            # Don't fail the pipeline if job triggering fails, as the job can be run manually later
+            echo "Job will need to be triggered manually in the Databricks workspace"
+          fi
 
   deploy-test:
     name: Deploy to Test
