@@ -121,7 +121,7 @@ resource "databricks_sql_table" "table" {
 
 # Upload CSV file containing country-currency data to the Databricks volume
 resource "databricks_file" "csv_data" {
-  source = "${path.module}/csv_data/country_code_to_currency_code.csv"
+  source = "${path.module}/../data/csv_data/country_code_to_currency_code.csv"
   path   = "/Volumes/${var.catalog_name}/${databricks_schema.schema.name}/${databricks_volume.volume.name}/data.csv"
 
   depends_on = [databricks_volume.volume]
@@ -129,7 +129,7 @@ resource "databricks_file" "csv_data" {
 
 # Create and deploy the data processing notebook to Databricks workspace
 resource "databricks_notebook" "load_data_notebook" {
-  source   = "${path.module}/notebooks/load_data_notebook_jupyter.ipynb"
+  source   = "${path.module}/../notebooks/load_data_notebook_jupyter.ipynb"
   path     = "/Shared/${var.app_name}/load_data_notebook"
   format   = "JUPYTER"
   language = "PYTHON"

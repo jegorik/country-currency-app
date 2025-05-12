@@ -10,15 +10,37 @@ The application follows this workflow:
 3. Creates and runs a notebook to load data from CSV to a Delta table
 4. Automates the entire process using a scheduled job
 
-## Directory Structure
+## Project Structure
+
+The project has been reorganized according to best practices for maintainability and clarity:
+
 ```
 country-currency-app/
-├── main.tf                # Main Terraform configuration file
-├── provider.tf            # Terraform provider configuration
-├── variables.tf           # Variable declarations
-├── terraform.tfvars       # Variable values (credentials & configuration)
-├── outputs.tf             # Output values from Terraform
-├── backend.tf             # Terraform state backend configuration
+├── terraform/               # All Terraform infrastructure code
+│   ├── main.tf              # Main Terraform configuration
+│   ├── variables.tf         # Variable declarations
+│   ├── outputs.tf           # Output definitions
+│   ├── provider.tf          # Provider configuration
+│   ├── backend.tf           # Backend configuration
+│   └── terraform.tfvars     # Variable values (credentials)
+├── notebooks/               # Databricks notebooks
+│   └── load_data_notebook_jupyter.ipynb
+├── data/                    # Data files
+│   └── csv_data/            # CSV data files
+│       └── country_code_to_currency_code.csv
+├── scripts/                 # Shell scripts for setup and testing
+│   ├── setup.sh             # Initial setup script 
+│   ├── configure_databricks_cli.sh # CLI configuration
+│   ├── test_databricks_connection.sh # Connection testing
+│   ├── validate_notebook.sh # Notebook validation
+│   └── run_tests.sh         # Consolidated test runner script
+├── docs/                    # Documentation
+│   ├── ARCHITECTURE.md
+│   ├── CONTRIBUTING.md
+│   ├── MIGRATION.md
+│   ├── TROUBLESHOOTING.md
+│   ├── CI_CD.md
+│   └── Other documentation files
 ├── Makefile               # Automation for common tasks
 ├── setup.sh               # Initial setup script
 ├── validate_notebook.sh   # Script to validate notebook execution
@@ -37,12 +59,10 @@ country-currency-app/
 │   └── load_data_notebook_jupyter.ipynb  # Data processing notebook in Jupyter format
 ├── tests/                 # Test files for application code
 │   └── test_load_data_notebook.py
-├── README.md              # Project documentation
-├── ARCHITECTURE.md        # Detailed system architecture
-├── CONTRIBUTING.md        # Contribution guidelines
-├── CI_CD.md               # CI/CD process documentation
-├── MIGRATION.md           # Migration instructions
-└── TROUBLESHOOTING.md     # Common issues and solutions
+├── environments/            # Environment-specific configuration
+├── ci/                      # CI/CD configuration files
+├── tests/                   # Test files
+└── README.md                # Project documentation (this file)
 ```
 
 ## Project Documentation
@@ -50,20 +70,13 @@ country-currency-app/
 This project includes several documentation files to help users understand, use, and contribute to the project:
 
 - [User Guide](docs/USER_GUIDE.md) - How to use the Country Currency App
-- [Architecture](ARCHITECTURE.md) - Detailed system architecture
+- [Architecture](docs/ARCHITECTURE.md) - Detailed system architecture
 - [Component Diagram](docs/COMPONENT_DIAGRAM.md) - Visual representation of system components
 - [Notebook Validation](docs/NOTEBOOK_VALIDATION.md) - How notebook validation works in CI/CD
-- [CI/CD Process](CI_CD.md) - CI/CD pipeline documentation
-- [Contributing Guidelines](CONTRIBUTING.md) - How to contribute to this project
-- [Migration Guide](MIGRATION.md) - Instructions for migrating between versions
-- [Troubleshooting](TROUBLESHOOTING.md) - Common issues and solutions
-
-- **README.md** - This file, containing project overview and setup instructions
-- **ARCHITECTURE.md** - Details about the system architecture and component interactions
-- **CONTRIBUTING.md** - Guidelines for contributing to the project
-- **CI_CD.md** - Information about the CI/CD pipeline and processes
-- **MIGRATION.md** - Instructions for migrating data between environments
-- **TROUBLESHOOTING.md** - Solutions for common issues and problems
+- [CI/CD Process](docs/CI_CD.md) - CI/CD pipeline documentation
+- [Contributing Guidelines](docs/CONTRIBUTING.md) - How to contribute to this project
+- [Migration Guide](docs/MIGRATION.md) - Instructions for migrating between versions
+- [Troubleshooting](docs/TROUBLESHOOTING.md) - Common issues and solutions
 
 ## Troubleshooting
 
@@ -86,7 +99,7 @@ For common issues and their solutions, please refer to the [TROUBLESHOOTING.md](
 1. Configure your Databricks credentials in `terraform.tfvars` or use environment variables
 2. Run the setup script to prepare your environment:
    ```bash
-   ./setup.sh
+   ./scripts/setup.sh
    ```
    
 3. Or use the Makefile for common operations:
@@ -99,6 +112,11 @@ For common issues and their solutions, please refer to the [TROUBLESHOOTING.md](
    
    # Apply changes
    make ENV=dev apply
+   ```
+   
+4. Run tests with the consolidated test script:
+   ```bash
+   ./scripts/run_tests.sh
    ```
 
 ### CI/CD Setup

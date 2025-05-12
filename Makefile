@@ -10,17 +10,17 @@ BACKEND_CONFIG ?=
 # Init, with optional backend config (useful for different environments)
 init:
 	@echo "Initializing Terraform..."
-	@terraform init $(BACKEND_CONFIG)
+	@cd terraform && terraform init $(BACKEND_CONFIG)
 
 # Plan changes for a specific environment
 plan:
 	@echo "Planning for $(ENV) environment..."
-	@terraform plan -var-file=environments/$(ENV).tfvars -out=$(ENV).tfplan
+	@cd terraform && terraform plan -var-file=../environments/$(ENV).tfvars -out=$(ENV).tfplan
 
 # Apply changes for a specific environment
 apply:
 	@echo "Applying for $(ENV) environment..."
-	@terraform apply $(ENV).tfplan
+	@cd terraform && terraform apply $(ENV).tfplan
 
 # Run tests
 test:
