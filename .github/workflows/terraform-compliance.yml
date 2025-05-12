@@ -79,7 +79,7 @@ jobs:
           resource "databricks_notebook" "load_data_notebook" {
             path     = "/Shared/\${var.app_name}/load_data_notebook"
             language = "PYTHON"
-            content  = "# Mock notebook content"
+            content_base64 = "IyBNb2NrIG5vdGVib29rIGNvbnRlbnQ=" # Base64 encoded "# Mock notebook content"
           }
           
           resource "databricks_job" "load_data_job" {
@@ -95,7 +95,7 @@ jobs:
           
           resource "databricks_file" "csv_data" {
             path = "/tmp/data.csv"
-            content = "country_code,currency_code"
+            content_base64 = "Y291bnRyeV9jb2RlLGN1cnJlbmN5X2NvZGU=" # Base64 encoded "country_code,currency_code"
           }
           EOF
           

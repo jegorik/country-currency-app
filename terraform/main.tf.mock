@@ -47,8 +47,9 @@ resource "databricks_sql_table" "table" {
   }
 }
 
-# Notebook resource without MD5 attribute
+# Notebook resource with base64 content
 resource "databricks_notebook" "load_data_notebook" {
   path     = "/Shared/${var.app_name}/load_data_notebook"
-  source   = "../notebooks/load_data_notebook_jupyter.ipynb"
+  language = "PYTHON"
+  content_base64 = "IyBNb2NrIG5vdGVib29rIGNvbnRlbnQ=" # Base64 encoded "# Mock notebook content"
 }
