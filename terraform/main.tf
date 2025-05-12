@@ -10,14 +10,14 @@
 # Use count to conditionally create this resource based on skip_validation
 data "databricks_sql_warehouse" "existing_warehouse" {
   count = var.skip_validation ? 0 : 1
-  id = var.databricks_warehouse_id
+  id    = var.databricks_warehouse_id
 }
 
 # Ensure the SQL warehouse is running before proceeding with data operations
 # Use count to conditionally create this resource based on skip_validation
 resource "null_resource" "start_warehouse" {
   count = var.skip_validation ? 0 : 1
-  
+
   provisioner "local-exec" {
     command = <<-EOT
       echo "Starting SQL warehouse ${var.databricks_warehouse_id}..."
@@ -194,7 +194,7 @@ resource "databricks_job" "load_data_job" {
 resource "null_resource" "trigger_job" {
   # Only run this when not in skip_validation mode (like in CI/CD testing)
   count = var.skip_validation ? 0 : 1
-  
+
   provisioner "local-exec" {
     command = <<-EOT
       echo "Triggering job ${databricks_job.load_data_job.id} to load country-currency data..."

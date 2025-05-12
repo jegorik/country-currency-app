@@ -59,7 +59,7 @@ def generate_mock_terraform_plan():
         }
     }
     
-    # Define the resources to include
+    # Define the resources to include - use simpler structures to avoid JSON issues
     resources = [
         {
             "type": "databricks_catalog",
@@ -72,7 +72,9 @@ def generate_mock_terraform_plan():
                 "tags": {
                     "environment": "dev",
                     "project": "Test Project"
-                }
+                },
+                "properties": {},  # Empty for simplicity
+                "force_destroy": False
             }
         },
         {
@@ -148,22 +150,28 @@ def generate_mock_terraform_plan():
             }
         })
         
-        # Add to configuration
+        # Add to configuration - create expressions safely
+        expressions = {}
+        for k, v in resource["values"].items():
+            # Handle nested dictionaries and complex structures
+            if isinstance(v, dict):
+                expressions[k] = {"constant_value": v}
+            elif isinstance(v, list):
+                expressions[k] = {"constant_value": v}
+            elif v is None:
+                continue  # Skip null values
+            else:
+                expressions[k] = {"constant_value": v}
+            
         resource_config = {
             "address": resource_id,
             "mode": "managed",
             "type": resource["type"],
             "name": resource["name"],
             "provider_config_key": "databricks",
-            "expressions": {k: {"constant_value": v} for k, v in resource["values"].items()},
+            "expressions": expressions,
             "schema_version": 0
         }
-        
-        # Add special handling for tags
-        if "tags" in resource["values"]:
-            resource_config["expressions"]["tags"] = {
-                "constant_value": resource["values"]["tags"]
-            }
             
         plan["configuration"]["root_module"]["resources"].append(resource_config)
     
@@ -176,10 +184,20 @@ def main():
     
     plan = generate_mock_terraform_plan()
     
-    with open(args.output, "w") as f:
-        json.dump(plan, f, indent=2)
-    
-    print(f"Mock Terraform plan written to {args.output}")
+    try:
+        # Validate the generated JSON first
+        json_string = json.dumps(plan, indent=2)
+        # Verify the json is valid by parsing it back
+        json.loads(json_string)
+        
+        # Write to file
+        with open(args.output, "w") as f:
+            f.write(json_string)
+        
+        print(f"Mock Terraform plan written to {args.output}")
+    except Exception as e:
+        print(f"Error generating JSON: {str(e)}")
+        raise
 
 if __name__ == "__main__":
     main()
