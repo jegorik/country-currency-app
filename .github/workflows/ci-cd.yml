@@ -90,7 +90,7 @@ jobs:
           cat > terraform/test.tfvars <<EOF
           databricks_host         = "https://test.cloud.databricks.com"
           databricks_token        = "dapi123456789"
-          catalog_name            = "test_catalog"
+          catalog_name            = "test_catalog"  # Mock catalog name for testing only
           schema_name             = "test_schema"
           environment             = "dev"
           project_name            = "Test Project"
@@ -149,7 +149,7 @@ jobs:
           cat > terraform/terraform.tfvars <<EOF
           databricks_host         = "${{ secrets.DATABRICKS_HOST }}"
           databricks_token        = "${{ secrets.DATABRICKS_TOKEN }}"
-          catalog_name            = "main"
+          catalog_name            = "${{ secrets.DATABRICKS_CATALOG }}"
           schema_name             = "country_currency"
           environment             = "dev"
           project_name            = "Country Currency"
@@ -211,7 +211,7 @@ jobs:
           cat > terraform/terraform.tfvars <<EOF
           databricks_host         = "${{ secrets.DATABRICKS_HOST }}"
           databricks_token        = "${{ secrets.DATABRICKS_TOKEN }}"
-          catalog_name            = "main"
+          catalog_name            = "${{ secrets.DATABRICKS_CATALOG }}"
           schema_name             = "country_currency"
           environment             = "test"
           project_name            = "Country Currency"
@@ -273,7 +273,7 @@ jobs:
           cat > terraform/terraform.tfvars <<EOF
           databricks_host         = "${{ secrets.DATABRICKS_HOST }}"
           databricks_token        = "${{ secrets.DATABRICKS_TOKEN }}"
-          catalog_name            = "main"
+          catalog_name            = "${{ secrets.DATABRICKS_CATALOG }}"
           schema_name             = "country_currency"
           environment             = "prod"
           project_name            = "Country Currency"
