@@ -30,7 +30,31 @@ def generate_mock_terraform_plan():
         "resource_changes": [],
         "configuration": {
             "root_module": {
-                "resources": []
+                "resources": [],
+                "variables": {
+                    "environment": {
+                        "default": "dev",
+                        "description": "Deployment environment (e.g., dev, test, prod)",
+                        "validation": {
+                            "condition": "contains([\"dev\", \"test\", \"prod\"], var.environment)",
+                            "error_message": "Environment must be one of: dev, test, or prod."
+                        }
+                    },
+                    "databricks_token": {
+                        "description": "Databricks API token",
+                        "sensitive": True,
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "variables": {
+            "databricks_token": {
+                "value": "mock-token-value",
+                "sensitive": True
+            },
+            "environment": {
+                "value": "dev"
             }
         }
     }
@@ -125,7 +149,7 @@ def generate_mock_terraform_plan():
         })
         
         # Add to configuration
-        plan["configuration"]["root_module"]["resources"].append({
+        resource_config = {
             "address": resource_id,
             "mode": "managed",
             "type": resource["type"],
@@ -133,7 +157,15 @@ def generate_mock_terraform_plan():
             "provider_config_key": "databricks",
             "expressions": {k: {"constant_value": v} for k, v in resource["values"].items()},
             "schema_version": 0
-        })
+        }
+        
+        # Add special handling for tags
+        if "tags" in resource["values"]:
+            resource_config["expressions"]["tags"] = {
+                "constant_value": resource["values"]["tags"]
+            }
+            
+        plan["configuration"]["root_module"]["resources"].append(resource_config)
     
     return plan
 
