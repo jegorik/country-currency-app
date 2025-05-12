@@ -69,7 +69,7 @@ jobs:
           
           # Use the existing mock file that doesn't depend on external services
           cp main.tf.mock main.tf
-          
+
       - name: Update variables.tf for testing
         run: |
           # Add skip_validation variable to variables.tf if it doesn't exist
