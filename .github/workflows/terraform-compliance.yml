@@ -1,9 +1,17 @@
 name: Terraform Compliance Checks
 
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - '*.tf'
+      - 'terraform/**'
+      - 'compliance/**'
   pull_request:
     paths:
       - '*.tf'
+      - 'terraform/**'
       - 'compliance/**'
   workflow_dispatch:
 
@@ -113,6 +121,14 @@ variable "skip_validation" {
           # Use correct paths: terraform-plan.json is in terraform directory, but compliance is in root
           terraform-compliance -f compliance/ -p terraform/terraform-plan.json
         continue-on-error: true
+
+      - name: Upload Compliance Report
+        uses: actions/upload-artifact@v2
+        if: always()
+        with:
+          name: compliance-report
+          path: terraform/terraform-plan.json
+          retention-days: 14
 
       - name: Post Compliance Results to PR
         if: github.event_name == 'pull_request' && steps.compliance.outcome == 'failure'
