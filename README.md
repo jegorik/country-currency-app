@@ -74,6 +74,7 @@ This project includes several documentation files to help users understand, use,
 - [Component Diagram](docs/COMPONENT_DIAGRAM.md) - Visual representation of system components
 - [Notebook Validation](docs/NOTEBOOK_VALIDATION.md) - How notebook validation works in CI/CD
 - [CI/CD Process](docs/CI_CD.md) - CI/CD pipeline documentation
+- [Terraform Compliance](docs/TERRAFORM_COMPLIANCE.md) - Policy-as-code testing for infrastructure
 - [Contributing Guidelines](docs/CONTRIBUTING.md) - How to contribute to this project
 - [Migration Guide](docs/MIGRATION.md) - Instructions for migrating between versions
 - [Troubleshooting](docs/TROUBLESHOOTING.md) - Common issues and solutions
