@@ -67,62 +67,8 @@ jobs:
           cd terraform
           cp main.tf main.tf.bak
           
-          # Create a simplified mock main.tf that doesn't depend on external services
-          cat > main.tf <<EOF
-# Mock main.tf for compliance testing
-# This file avoids external dependencies that would fail in CI
-
-# Mock SQL warehouse resource instead of using data source
-resource "databricks_sql_warehouse" "mock_warehouse" {
-  name = "Mock Warehouse"
-  warehouse_type = "PRO"
-  auto_stop_mins = 10
-}
-
-# Mock catalog resource
-resource "databricks_catalog" "this" {
-  name    = var.catalog_name
-  comment = "Catalog for \${var.project_name} data"
-}
-
-# Mock schema resource
-resource "databricks_schema" "this" {
-  name      = var.schema_name
-  catalog_name = databricks_catalog.this.name
-  comment   = "Schema for \${var.project_name} data in \${var.environment} environment"
-}
-
-# Mock volume resource
-resource "databricks_volume" "this" {
-  name      = var.volume_name
-  catalog_name = databricks_catalog.this.name
-  schema_name  = databricks_schema.this.name
-  volume_type = "MANAGED"
-  comment   = "Volume for \${var.project_name} data files"
-}
-
-# Mock table resource
-resource "databricks_table" "country_currency" {
-  name      = var.table_name
-  catalog_name = databricks_catalog.this.name
-  schema_name  = databricks_schema.this.name
-  comment   = "Country to currency code mapping table"
-  column {
-    name = "country_code"
-    type = "STRING"
-  }
-  column {
-    name = "currency_code"
-    type = "STRING" 
-  }
-}
-
-# Notebook resource without MD5 attribute
-resource "databricks_notebook" "load_data_notebook" {
-  path     = "/Shared/\${var.app_name}/load_data_notebook"
-  source   = "../notebooks/load_data_notebook_jupyter.ipynb"
-}
-EOF
+          # Use the existing mock file that doesn't depend on external services
+          cp main.tf.mock main.tf
           
       - name: Update variables.tf for testing
         run: |
