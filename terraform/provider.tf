@@ -11,7 +11,7 @@ terraform {
     # Databricks provider for managing Databricks resources
     databricks = {
       source  = "databricks/databricks"
-      version = "1.6.5"  # Pin to specific version to avoid provider bugs
+      version = "1.77"  # Using the latest version (as of May 2025)
     }
   }
 

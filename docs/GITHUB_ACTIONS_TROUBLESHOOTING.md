@@ -2,6 +2,47 @@
 
 ## GitHub Actions CI/CD Issues
 
+### Duplicate Required Providers Configuration Error
+
+**Problem:**
+When running `terraform init` you might encounter the following error:
+```
+Error: Duplicate required providers configuration
+
+  on versions.tf line 2, in terraform:
+   2:   required_providers {
+
+A module may have only one required providers configuration. The required
+providers were previously configured at provider.tf:10,3-21.
+```
+
+**Solution:**
+This error occurs when you have terraform provider configurations in multiple files. To fix:
+
+1. **Remove the duplicate `versions.tf` file** entirely:
+   ```bash
+   rm terraform/versions.tf
+   ```
+
+2. **Keep provider configuration in one file** (in our case, `provider.tf`)
+
+3. **Update the provider version** in the remaining file:
+   ```terraform
+   required_providers {
+     databricks = {
+       source  = "databricks/databricks"
+       version = "1.77"  # Using the latest version
+     }
+   }
+   ```
+
+4. **Update the Terraform version** in GitHub Actions workflow to be compatible:
+   ```yaml
+   env:
+     TF_VERSION: 1.5.7
+     # Updated to Terraform 1.5.7 to ensure compatibility with Databricks provider 1.77
+   ```
+
 ### Provider Produced Invalid Plan Error
 
 **Problem:**

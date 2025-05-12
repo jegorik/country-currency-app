@@ -23,7 +23,7 @@ permissions:
 
 env:
   TF_VERSION: 1.5.7
-  # Updated Terraform version to fix provider compatibility issues
+  # Updated to Terraform 1.5.7 to ensure compatibility with Databricks provider 1.77
   # Pin Python version to < 3.12 until PySpark is updated for compatibility
   # See docs/PYTHON_COMPATIBILITY.md for details
   PYTHON_VERSION: 3.11
