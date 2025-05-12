@@ -110,7 +110,11 @@ def validate_notebook_imports(notebook_path):
 
 def main():
     """Main function to validate all notebooks in the repo"""
-    notebook_dir = Path("notebooks")
+    # Get the script directory (ci/) and find notebooks relative to project root
+    script_dir = Path(__file__).parent
+    project_root = script_dir.parent
+    notebook_dir = project_root / "notebooks"
+    
     if not notebook_dir.exists():
         print(f"ERROR: Notebook directory {notebook_dir} not found")
         sys.exit(1)

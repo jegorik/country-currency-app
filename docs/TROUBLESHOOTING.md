@@ -8,6 +8,7 @@ This document provides solutions for common issues encountered when working with
 3. [Authentication Issues](#authentication-issues)
 4. [Terraform Apply/Destroy Problems](#terraform-applydestroy-problems)
 5. [SQL Warehouse Connectivity](#sql-warehouse-connectivity)
+6. [Python Compatibility Issues](#python-compatibility-issues)
 
 ## Notebook Format Issues
 
@@ -106,3 +107,16 @@ Common causes include expired tokens, incorrect host URLs, or misconfigured perm
      -H "Content-Type: application/json"
    ```
 4. Allow sufficient time for warehouse startup before executing queries
+
+## Python Compatibility Issues
+
+### Issue: PySpark Deprecation Warnings with Python 3.12
+
+**Symptoms:**
+- Deprecation warnings about `typing.io` during test execution
+- Potential failures when upgrading to Python 3.12
+
+**Solution:**
+- For detailed information and solutions, see [Python Compatibility Guide](PYTHON_COMPATIBILITY.md)
+- Use `-W ignore::DeprecationWarning` flag when running Python tests (implemented in `run_tests.sh`)
+- Consider pinning Python version to 3.11 until PySpark is updated

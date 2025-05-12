@@ -38,15 +38,21 @@ case $choice in
   3)
     echo -e "${GREEN}Running Python Unit Tests...${NC}"
     
-    # Check if pytest is installed
-    if ! command -v pytest &> /dev/null; then
+    # Explicitly use Python 3.11 which matches our pip3 installation
+    PYTHON_CMD=python3.11
+    
+    # Check if pytest module is available for the Python interpreter
+    if ! $PYTHON_CMD -c "import pytest" &> /dev/null; then
       echo -e "${YELLOW}pytest not found. Installing required packages...${NC}"
-      pip install pytest pytest-mock pyspark==3.3.0 pyarrow
+      pip3 install --user pytest pytest-mock pyspark==3.3.0 pyarrow
     fi
     
     # Run the tests
     cd "$(dirname "$0")/.."
-    python -m pytest tests/ -v
+    echo -e "${YELLOW}Using Python interpreter: $PYTHON_CMD${NC}"
+    $PYTHON_CMD -c "import sys; print(f'Python version: {sys.version}')"
+    # Add -W ignore option to suppress deprecation warnings
+    $PYTHON_CMD -W ignore::DeprecationWarning -m pytest tests/ -v
     ;;
   4)
     echo -e "${BLUE}Exiting test runner.${NC}"

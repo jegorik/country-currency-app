@@ -46,6 +46,7 @@ variable "databricks_token" {
 variable "databricks_warehouse_id" {
   description = "ID of the existing Databricks SQL warehouse to use for data processing"
   type        = string
+  sensitive   = true
 }
 
 variable "catalog_name" {
