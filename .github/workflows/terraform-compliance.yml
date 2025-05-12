@@ -1,17 +1,9 @@
 name: Terraform Compliance Checks
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - '*.tf'
-      - 'terraform/**'
-      - 'compliance/**'
   pull_request:
     paths:
       - '*.tf'
-      - 'terraform/**'
       - 'compliance/**'
   workflow_dispatch:
 
@@ -48,10 +40,9 @@ jobs:
 
       - name: Create test tfvars file
         run: |
-          # Create test.tfvars file in the terraform directory
-          cat > terraform/test.tfvars <<EOF
-          databricks_host         = "http://localhost:8080"
-          databricks_token        = "mock-token-for-testing"
+          cat > test.tfvars <<EOF
+          databricks_host         = "https://test.cloud.databricks.com"
+          databricks_token        = "dapi123456789"
           catalog_name            = "test_catalog"
           schema_name             = "test_schema"
           environment             = "dev"
@@ -59,76 +50,24 @@ jobs:
           table_name              = "test_table"
           app_name                = "test-app"
           volume_name             = "test_volume"
-          databricks_warehouse_id = "mock-warehouse-id"
-          skip_validation         = true
+          databricks_warehouse_id = "test_warehouse_id"
           EOF
 
       - name: Terraform Init
-        run: |
-          # Change to terraform directory before running commands
-          cd terraform
-          terraform init -backend=false
-
-      - name: Create mock TF files for testing
-        run: |
-          # Create a temporary mock version of main.tf that doesn't try to access real Databricks resources
-          cd terraform
-          cp main.tf main.tf.bak
-          
-          # Use the existing mock file that doesn't depend on external services
-          cp main.tf.mock main.tf
-
-      - name: Update variables.tf for testing
-        run: |
-          # Add skip_validation variable to variables.tf if it doesn't exist
-          cd terraform
-          if ! grep -q "skip_validation" variables.tf; then
-            echo '
-# Variable to skip validation in CI/CD environments
-variable "skip_validation" {
-  description = "Whether to skip validation steps that require connectivity"
-  type        = bool
-  default     = false
-}' >> variables.tf
-          fi
+        run: terraform init -backend=false
 
       - name: Terraform Plan
-        run: |
-          # Change to terraform directory before running commands
-          cd terraform
-          
-          # Set environment variables to mock the Databricks provider
-          export TF_VAR_databricks_host="http://localhost:8080"
-          export TF_VAR_databricks_token="mock-token-for-testing"
-          
-          # Use -refresh=false to avoid trying to refresh remote state
-          terraform plan -var-file=test.tfvars -refresh=false -out=terraform.tfplan || {
-            echo "Plan failed but continuing for compliance checks"
-            # Create a more minimal plan just for compliance testing
-            terraform plan -refresh=false -out=terraform.tfplan || true
-          }
+        run: terraform plan -var-file=test.tfvars -out=terraform.tfplan
 
       - name: Convert Terraform Plan
-        run: |
-          # Change to terraform directory to show the plan
-          cd terraform
-          terraform show -json terraform.tfplan > terraform-plan.json || echo "Plan conversion had warnings, continuing anyway"
+        run: terraform show -json terraform.tfplan > terraform-plan.json
 
       - name: Run Terraform Compliance
         id: compliance
         run: |
           echo "Running terraform-compliance checks..."
-          # Use correct paths: terraform-plan.json is in terraform directory, but compliance is in root
-          terraform-compliance -f compliance/ -p terraform/terraform-plan.json
+          terraform-compliance -f compliance/ -p terraform-plan.json
         continue-on-error: true
-
-      - name: Upload Compliance Report
-        uses: actions/upload-artifact@v2
-        if: always()
-        with:
-          name: compliance-report
-          path: terraform/terraform-plan.json
-          retention-days: 14
 
       - name: Post Compliance Results to PR
         if: github.event_name == 'pull_request' && steps.compliance.outcome == 'failure'
