@@ -1,13 +1,6 @@
 # Mock main.tf for compliance testing
 # This file avoids external dependencies that would fail in CI
 
-# Mock SQL warehouse resource instead of using data source
-resource "databricks_sql_warehouse" "mock_warehouse" {
-  name = "Mock Warehouse"
-  warehouse_type = "PRO"
-  auto_stop_mins = 10
-}
-
 # Mock catalog resource
 resource "databricks_catalog" "this" {
   name    = var.catalog_name
@@ -15,7 +8,7 @@ resource "databricks_catalog" "this" {
 }
 
 # Mock schema resource
-resource "databricks_schema" "this" {
+resource "databricks_schema" "schema" {
   name      = var.schema_name
   catalog_name = databricks_catalog.this.name
   comment   = "Schema for ${var.project_name} data in ${var.environment} environment"
@@ -25,24 +18,32 @@ resource "databricks_schema" "this" {
 resource "databricks_volume" "this" {
   name      = var.volume_name
   catalog_name = databricks_catalog.this.name
-  schema_name  = databricks_schema.this.name
+  schema_name  = databricks_schema.schema.name
   volume_type = "MANAGED"
   comment   = "Volume for ${var.project_name} data files"
 }
 
-# Mock table resource
-resource "databricks_table" "country_currency" {
-  name      = var.table_name
-  catalog_name = databricks_catalog.this.name
-  schema_name  = databricks_schema.this.name
-  comment   = "Country to currency code mapping table"
+# Mock SQL table resource
+resource "databricks_sql_table" "table" {
+  name             = var.table_name
+  catalog_name     = databricks_catalog.this.name
+  schema_name      = databricks_schema.schema.name
+  data_source_format = "CSV"
+  table_type      = "MANAGED"
+  comment         = "Country to currency code mapping table"
+
   column {
-    name = "country_code"
-    type = "STRING"
+    name      = "country_code"
+    position  = 0
+    type_name = "string"
+    type_text = "string"
   }
+  
   column {
-    name = "currency_code"
-    type = "STRING" 
+    name      = "currency_code"
+    position  = 1
+    type_name = "string"
+    type_text = "string"
   }
 }
 
