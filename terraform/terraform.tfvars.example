@@ -1,0 +1,25 @@
+# Sample configuration file - Copy to terraform.tfvars and fill in your values
+# Do not commit terraform.tfvars to version control!
+
+# Databricks connectivity
+databricks_host         = "https://your-workspace.cloud.databricks.com" # Databricks workspace URL
+databricks_token        = "dapi123456789abcdef"                        # Your Databricks personal access token
+
+# Resource configuration
+catalog_name            = "country_currency_catalog"  # Name of the catalog to create
+schema_name             = "country_currency"          # Name of the schema to create
+table_name              = "country_to_currency"       # Name of the table to create
+volume_name             = "csv_data"                  # Name of the volume for CSV files
+app_name                = "country-currency-app"      # Application name (for resource organization)
+databricks_warehouse_id = "1234567890abcdef"          # ID of your existing SQL warehouse
+
+# Environment
+environment             = "dev"                       # Environment (dev, test, or prod)
+project_name            = "Country Currency App"      # Project name for resource labeling
+
+# Optional additional tags
+tags = {
+  owner       = "data-engineering-team"
+  cost_center = "data-products"
+  created_by  = "terraform"
+}

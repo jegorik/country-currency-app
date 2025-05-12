@@ -1,0 +1,55 @@
+# Mock main.tf for compliance testing
+# This file avoids external dependencies that would fail in CI
+
+# Mock catalog resource
+resource "databricks_catalog" "this" {
+  name    = var.catalog_name
+  comment = "Catalog for ${var.project_name} data"
+}
+
+# Mock schema resource
+resource "databricks_schema" "schema" {
+  name      = var.schema_name
+  catalog_name = databricks_catalog.this.name
+  comment   = "Schema for ${var.project_name} data in ${var.environment} environment"
+}
+
+# Mock volume resource
+resource "databricks_volume" "this" {
+  name      = var.volume_name
+  catalog_name = databricks_catalog.this.name
+  schema_name  = databricks_schema.schema.name
+  volume_type = "MANAGED"
+  comment   = "Volume for ${var.project_name} data files"
+}
+
+# Mock SQL table resource
+resource "databricks_sql_table" "table" {
+  name             = var.table_name
+  catalog_name     = databricks_catalog.this.name
+  schema_name      = databricks_schema.schema.name
+  data_source_format = "CSV"
+  table_type      = "MANAGED"
+  comment         = "Country to currency code mapping table"
+
+  column {
+    name      = "country_code"
+    position  = 0
+    type_name = "string"
+    type_text = "string"
+  }
+  
+  column {
+    name      = "currency_code"
+    position  = 1
+    type_name = "string"
+    type_text = "string"
+  }
+}
+
+# Notebook resource with base64 content
+resource "databricks_notebook" "load_data_notebook" {
+  path     = "/Shared/${var.app_name}/load_data_notebook"
+  language = "PYTHON"
+  content_base64 = "IyBNb2NrIG5vdGVib29rIGNvbnRlbnQ=" # Base64 encoded "# Mock notebook content"
+}
