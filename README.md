@@ -39,7 +39,9 @@ country-currency-app/
 │   ├── CONTRIBUTING.md
 │   ├── MIGRATION.md
 │   ├── TROUBLESHOOTING.md
+│   ├── GITHUB_ACTIONS_TROUBLESHOOTING.md
 │   ├── CI_CD.md
+│   ├── VIEW_COMPLIANCE_RESULTS.md  # Guide for reading Terraform compliance results
 │   └── Other documentation files
 ├── Makefile               # Automation for common tasks
 ├── setup.sh               # Initial setup script
@@ -179,6 +181,8 @@ This project uses GitHub Actions to automate testing, building, and deployment p
 For complete details on the CI/CD implementation, see:
 - [CI_CD.md](docs/CI_CD.md) - General CI/CD configuration
 - [CI_CD_TESTING.md](docs/CI_CD_TESTING.md) - CI/CD testing configuration and troubleshooting
+- [VIEW_COMPLIANCE_RESULTS.md](docs/VIEW_COMPLIANCE_RESULTS.md) - How to view Terraform compliance check results
+- [TERRAFORM_COMPLIANCE.md](docs/TERRAFORM_COMPLIANCE.md) - Information about Terraform compliance checks
 
 ## Contributing
 Please follow the standard Git workflow:
