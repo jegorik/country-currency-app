@@ -53,7 +53,7 @@ tokens.txt
 [Ll]ib
 [Ll]ib64
 [Ll]ocal
-[Ss]cripts
+# [Ss]cripts  # Commented out to allow project scripts directory to be committed
 pyvenv.cfg
 .venv
 pip-selfcheck.json
