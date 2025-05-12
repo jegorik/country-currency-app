@@ -81,13 +81,15 @@ This project includes several documentation files to help users understand, use,
 
 ## Troubleshooting
 
-For common issues and their solutions, please refer to the [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) document. Common issues include:
+For common issues and their solutions, please refer to the [TROUBLESHOOTING.md](./docs/TROUBLESHOOTING.md) document. Common issues include:
 
 1. **Notebook Format Issues** - Problems with notebook execution format in Databricks
 2. **Table Schema Conflicts** - Issues with table schema discrepancies between Terraform and Databricks
 3. **Authentication Issues** - Problems with Databricks API tokens and authentication
 4. **Terraform Apply/Destroy Problems** - Common Terraform operational issues
 5. **SQL Warehouse Connectivity** - Issues connecting to SQL warehouses
+
+For specific GitHub Actions CI/CD issues, see [GITHUB_ACTIONS_TROUBLESHOOTING.md](./docs/GITHUB_ACTIONS_TROUBLESHOOTING.md).
 
 ## Prerequisites
 - Terraform v1.0.0+

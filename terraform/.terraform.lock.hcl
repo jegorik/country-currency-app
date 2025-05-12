@@ -3,7 +3,7 @@
 
 provider "registry.terraform.io/databricks/databricks" {
   version     = "1.77.0"
-  constraints = "~> 1.0"
+  constraints = "1.77.0"
   hashes = [
     "h1:6UAyDLNEZE1bmpeBY3y7vKgotsbEPWeHBCgK1agKLsA=",
     "zh:0952226b9c86592b93ddc69e388eb494b20f920ba3930571be8f368e30df7e83",
