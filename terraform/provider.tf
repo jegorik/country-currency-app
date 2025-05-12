@@ -11,7 +11,7 @@ terraform {
     # Databricks provider for managing Databricks resources
     databricks = {
       source  = "databricks/databricks"
-      version = "~> 1.0"
+      version = "1.6.5"  # Pin to specific version to avoid provider bugs
     }
   }
 
@@ -26,8 +26,11 @@ terraform {
 
 # Configure Databricks provider authentication
 provider "databricks" {
-  host  = var.databricks_host
-  token = var.databricks_token
+  host                 = var.databricks_host
+  token                = var.databricks_token
+  skip_verify          = var.skip_validation  # Skip SSL verification if validation is disabled
+  debug_truncate_bytes = 2048                 # Increase debug output size
+  debug_headers        = true                 # Include headers in debug output
 
   # Uncomment for Azure Databricks authentication
   # azure_workspace_resource_id = var.azure_workspace_id
