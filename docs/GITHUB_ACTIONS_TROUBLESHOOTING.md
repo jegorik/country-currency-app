@@ -2,6 +2,37 @@
 
 ## GitHub Actions CI/CD Issues
 
+### Catalog Does Not Exist Error
+
+**Problem:**
+When deploying to any environment, you might encounter an error like:
+```
+Error: cannot create schema: Catalog 'main' does not exist.
+
+  with databricks_schema.schema,
+  on main.tf line 44, in resource "databricks_schema" "schema":
+  44: resource "databricks_schema" "schema" {
+```
+
+**Solution:**
+This occurs when the hardcoded catalog name in the GitHub Actions workflow doesn't match an existing catalog in your Databricks workspace. To fix this:
+
+1. **Use the catalog name from GitHub Secrets** instead of hardcoding values:
+   ```yaml
+   - name: Create terraform.tfvars
+     run: |
+       cat > terraform/terraform.tfvars <<EOF
+       databricks_host         = "${{ secrets.DATABRICKS_HOST }}"
+       databricks_token        = "${{ secrets.DATABRICKS_TOKEN }}"
+       catalog_name            = "${{ secrets.DATABRICKS_CATALOG }}"  # Use secret instead of hardcoded value
+       # Other properties...
+       EOF
+   ```
+
+2. **Ensure the DATABRICKS_CATALOG secret is defined** in your GitHub repository settings with the correct catalog name for each environment.
+
+3. **Verify the catalog exists** in your Databricks workspace before deploying.
+
 ### Duplicate Required Providers Configuration Error
 
 **Problem:**
