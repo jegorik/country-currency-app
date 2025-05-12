@@ -78,9 +78,10 @@ export DATABRICKS_TOKEN=$DATABRICKS_TOKEN
 
 # Test with Databricks CLI
 echo "Testing API with Databricks CLI..."
-databricks workspace ls / > /dev/null 2>&1
+databricks workspace list / > /dev/null 2>&1
 if [ $? -eq 0 ]; then
   echo -e "${GREEN}Successfully authenticated with Databricks API${NC}"
+  databricks workspace list / | head -5
 else
   echo -e "${RED}Failed to authenticate with Databricks API${NC}"
   echo "Please check your token and host URL"
