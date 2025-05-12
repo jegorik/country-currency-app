@@ -97,6 +97,7 @@ jobs:
           app_name                = "test-app"
           volume_name             = "test_volume"
           databricks_warehouse_id = "test_warehouse_id"
+          skip_validation         = true
           EOF
 
       - name: Terraform Init
