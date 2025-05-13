@@ -1,7 +1,7 @@
 # Makefile for Country Currency App
 # Helps run common CI/CD tasks locally
 
-.PHONY: init plan apply test validate compliance clean deploy-dev deploy-test deploy-prod
+.PHONY: init plan apply test validate compliance clean deploy-dev deploy-test deploy-prod streamlit-app install-streamlit
 
 # Variables
 ENV ?= dev
@@ -79,3 +79,32 @@ security-check:
 	@echo "Running security checks..."
 	@checkov -d . --framework terraform
 	@bandit -r notebooks/
+
+# Install Streamlit requirements
+install-streamlit:
+	@echo "Installing Streamlit app dependencies..."
+	@cd streamlit && pip install -r requirements.txt
+
+# Start the Streamlit application
+streamlit-app: install-streamlit
+	@echo "Starting Streamlit application..."
+ifeq ($(OS),Windows_NT)
+	@cd streamlit && powershell -ExecutionPolicy Bypass -File start_app.ps1
+else
+	@cd streamlit && bash start_app.sh
+endif
+
+# Wait for job completion and then start the Streamlit application
+wait-and-start-ui: install-streamlit
+	@echo "Waiting for job to complete and then starting Streamlit app..."
+ifeq ($(OS),Windows_NT)
+	@cd streamlit && powershell -ExecutionPolicy Bypass -File wait_and_start.ps1
+else
+	@cd streamlit && bash wait_and_start.sh
+endif
+
+# Full deployment with Streamlit app (without waiting)
+deploy-with-ui: deploy-dev streamlit-app
+
+# Full deployment with waiting for job completion
+deploy-and-wait: deploy-dev wait-and-start-ui

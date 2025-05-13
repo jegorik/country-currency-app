@@ -28,6 +28,20 @@ country-currency-app/
 ├── data/                    # Data files
 │   └── csv_data/            # CSV data files
 │       └── country_code_to_currency_code.csv
+├── streamlit/               # Streamlit web application
+├── scripts/                # Utility scripts
+│   ├── check_dependencies.sh  # Script to check required dependencies 
+│   ├── deploy.sh             # Auto-detect OS and run appropriate deployment script
+│   ├── deploy_windows.ps1    # Windows-specific deployment script
+│   └── deploy_linux.sh       # Linux-specific deployment script
+│   ├── app.py               # Main Streamlit application
+│   ├── requirements.txt     # Python dependencies
+│   ├── README.md            # Streamlit app documentation
+│   ├── config/              # App configuration
+│   ├── models/              # Data models
+│   ├── operations/          # Business logic
+│   ├── ui/                  # User interface components
+│   └── utils/               # Utility functions
 ├── scripts/                 # Shell scripts for setup and testing
 │   ├── setup.sh             # Initial setup script 
 │   ├── configure_databricks_cli.sh # CLI configuration
@@ -40,6 +54,7 @@ country-currency-app/
 │   ├── MIGRATION.md
 │   ├── TROUBLESHOOTING.md
 │   ├── CI_CD.md
+│   ├── STREAMLIT_APP.md     # Documentation for the Streamlit app
 │   └── Other documentation files
 ├── Makefile               # Automation for common tasks
 ├── setup.sh               # Initial setup script
@@ -65,6 +80,110 @@ country-currency-app/
 └── README.md                # Project documentation (this file)
 ```
 
+## Getting Started
+
+### Prerequisites
+- Terraform (version 1.11.4 or later)
+- Databricks account with appropriate permissions
+- PowerShell (for Windows) or Bash (for Linux/macOS)
+- Access to a Databricks workspace
+
+### Quick Start Deployment
+
+#### Option 1: Automatic OS Detection
+```bash
+# Run the auto-detect script that will choose the appropriate deployment script
+bash scripts/deploy.sh
+```
+
+#### Option 2: OS-Specific Scripts
+For Windows:
+```powershell
+# Run the Windows-specific deployment script
+.\scripts\deploy_windows.ps1
+```
+
+For Linux/macOS:
+```bash
+# Run the Linux-specific deployment script
+bash scripts/deploy_linux.sh
+```
+
+## Cross-Platform Compatibility
+
+This project supports deployment on both Windows and Linux operating systems. The Terraform scripts are designed to work correctly on your specific platform.
+
+### Platform-Specific Dependencies
+
+#### Windows Requirements:
+- PowerShell Core (pwsh)
+- Terraform 1.11.4+
+- Databricks CLI
+- Python 3.x
+
+#### Linux/Unix Requirements:
+- Bash
+- curl
+- grep
+- sed
+- Terraform 1.11.4+
+- Databricks CLI
+- Python 3.x
+
+### Checking Dependencies
+
+Run the dependency checker script before deployment:
+
+```bash
+# On Linux/macOS
+bash scripts/check_dependencies.sh
+
+# On Windows (Git Bash or WSL)
+bash scripts/check_dependencies.sh
+```
+
+This will verify that all required tools are installed on your system.
+
+## Streamlit Web Application
+
+The project includes a Streamlit web application that provides a user-friendly interface for managing the country-currency data. The app allows users to:
+
+- View all country-currency mappings in an interactive table
+- Add new country-currency mappings
+- Edit existing mappings
+- Delete mappings
+- Search and filter data
+
+### Running the Streamlit App
+
+After deploying the Databricks infrastructure, you can start the Streamlit app using one of the following methods:
+
+1. **Without waiting for job completion:**
+   ```bash
+   make streamlit-app
+   ```
+
+2. **Wait for the Databricks job to complete first:**
+   ```bash
+   make wait-and-start-ui
+   ```
+
+3. **Deploy infrastructure and start app in one command:**
+   ```bash
+   make deploy-and-wait
+   ```
+
+### Streamlit App Architecture
+
+The Streamlit app is structured following a clean architecture pattern:
+
+- **UI Layer** - Streamlit components for user interaction
+- **Operations Layer** - Business logic for CRUD operations
+- **Data Access Layer** - Connection and queries to Databricks
+- **Configuration** - App settings and parameters
+
+For more details on the Streamlit application, see [STREAMLIT_APP.md](docs/STREAMLIT_APP.md).
+
 ## Project Documentation
 
 This project includes several documentation files to help users understand, use, and contribute to the project:
@@ -77,6 +196,7 @@ This project includes several documentation files to help users understand, use,
 - [Contributing Guidelines](docs/CONTRIBUTING.md) - How to contribute to this project
 - [Migration Guide](docs/MIGRATION.md) - Instructions for migrating between versions
 - [Troubleshooting](docs/TROUBLESHOOTING.md) - Common issues and solutions
+- [Streamlit App](docs/STREAMLIT_APP.md) - Documentation for the Streamlit application
 
 ## Troubleshooting
 

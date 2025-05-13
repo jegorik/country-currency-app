@@ -19,19 +19,23 @@ resource "null_resource" "start_warehouse" {
   count = var.skip_validation ? 0 : 1
 
   provisioner "local-exec" {
+    interpreter = ["powershell", "-Command"]
     command = <<-EOT
-      echo "Starting SQL warehouse ${var.databricks_warehouse_id}..."
-      curl -s -X POST "${var.databricks_host}/api/2.0/sql/warehouses/${var.databricks_warehouse_id}/start" \
-        -H "Authorization: Bearer ${var.databricks_token}" \
-        -H "Content-Type: application/json"
+      Write-Host "Starting SQL warehouse ${var.databricks_warehouse_id}..."
       
-      # Check result
-      if [ $? -eq 0 ]; then
-        echo "SQL warehouse start request successful"
-      else
-        echo "Failed to start SQL warehouse"
+      $Headers = @{
+        "Authorization" = "Bearer ${var.databricks_token}"
+        "Content-Type" = "application/json" 
+      }
+      
+      try {
+        $Response = Invoke-RestMethod -Uri "${var.databricks_host}/api/2.0/sql/warehouses/${var.databricks_warehouse_id}/start" -Method Post -Headers $Headers
+        Write-Host "SQL warehouse start request successful"
+      }
+      catch {
+        Write-Host "Failed to start SQL warehouse. Error: $_"
         exit 1
-      fi
+      }
     EOT
   }
 }
@@ -191,29 +195,31 @@ resource "null_resource" "trigger_job" {
   count = var.skip_validation ? 0 : 1
 
   provisioner "local-exec" {
+    interpreter = ["powershell", "-Command"]
     command = <<-EOT
-      echo "Waiting 5 seconds before triggering job..."
-      sleep 5
-      echo "Triggering job ${databricks_job.load_data_job.id} to load country-currency data..."
-      response=$(curl -s -w "\n%%{http_code}" -X POST "${var.databricks_host}/api/2.1/jobs/run-now" \
-        -H "Authorization: Bearer ${var.databricks_token}" \
-        -H "Content-Type: application/json" \
-        -d '{
-          "job_id": ${databricks_job.load_data_job.id}
-        }')
+      Write-Host "Waiting 5 seconds before triggering job..."
+      Start-Sleep -Seconds 5
+      Write-Host "Triggering job ${databricks_job.load_data_job.id} to load country-currency data..."
       
-      status_code=$(echo "$response" | tail -n1)
-      response_body=$(echo "$response" | sed '$d')
+      $Headers = @{
+        "Authorization" = "Bearer ${var.databricks_token}"
+        "Content-Type" = "application/json"
+      }
       
-      if [ $status_code -eq 200 ]; then
-        run_id=$(echo $response_body | grep -o '"run_id":[0-9]*' | cut -d':' -f2)
-        echo "Job triggered successfully! Run ID: $run_id"
-        echo "Check job status at: ${var.databricks_host}/#job/${databricks_job.load_data_job.id}/run/$run_id"
-      else
-        echo "Failed to trigger job. Status code: $status_code"
-        echo "Response: $response_body"
+      $Body = @{
+        "job_id" = ${databricks_job.load_data_job.id}
+      } | ConvertTo-Json
+      
+      try {
+        $Response = Invoke-RestMethod -Uri "${var.databricks_host}/api/2.1/jobs/run-now" -Method Post -Headers $Headers -Body $Body
+        $RunId = $Response.run_id
+        Write-Host "Job triggered successfully! Run ID: $RunId"
+        Write-Host "Check job status at: ${var.databricks_host}/#job/${databricks_job.load_data_job.id}/run/$RunId"
+      }
+      catch {
+        Write-Host "Failed to trigger job. Error: $_"
         exit 1
-      fi
+      }
     EOT
   }
 

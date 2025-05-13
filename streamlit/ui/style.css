@@ -1,0 +1,41 @@
+/* Custom CSS for the Streamlit app */
+
+/* Main app styling */
+body {
+    font-family: 'Inter', sans-serif;
+}
+
+/* Header styling */
+h1, h2, h3 {
+    color: #0068C9;
+}
+
+/* Button styling */
+button {
+    border-radius: 4px !important;
+}
+
+/* Input field styling */
+input, select, textarea {
+    border-radius: 4px !important;
+}
+
+/* DataTable styling */
+.stDataFrame {
+    border-radius: 8px !important;
+    overflow: hidden;
+}
+
+/* Alert boxes */
+.stAlert {
+    border-radius: 6px !important;
+    padding: 15px !important;
+}
+
+/* Forms */
+.stForm {
+    background-color: #f9f9f9;
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+}
