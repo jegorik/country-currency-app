@@ -3,7 +3,26 @@ import streamlit as st
 import os
 import sys
 import time
+import logging
 from pathlib import Path
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[logging.StreamHandler()]
+)
+logger = logging.getLogger(__name__)
+
+# Debug mode - set to False to disable debug messages
+DEBUG_MODE = False
+
+def debug_print(*args, **kwargs):
+    """Print only when in debug mode or log at debug level."""
+    if DEBUG_MODE:
+        print(*args, **kwargs)
+    # Always log at debug level for file logging
+    logger.debug(" ".join(str(a) for a in args))
 
 # Add the project to the Python path
 sys.path.insert(0, str(Path(__file__).parent))
@@ -55,11 +74,10 @@ def main():
     base_dir = Path(__file__).resolve().parent.parent
     tfvars_path = base_dir / "terraform" / "terraform.tfvars"
     job_id_path = base_dir / "terraform" / "job_id.txt"
-      # Debug: Print paths to check if they're correct
-    print(f"Base directory: {base_dir}")
-    print(f"terraform.tfvars path: {tfvars_path}")
-    print(f"job_id.txt path: {job_id_path}")
-    print(f"terraform.tfvars exists: {tfvars_path.exists()}")
+    debug_print(f"Base directory: {base_dir}")
+    debug_print(f"terraform.tfvars path: {tfvars_path}")
+    debug_print(f"job_id.txt path: {job_id_path}")
+    debug_print(f"terraform.tfvars exists: {tfvars_path.exists()}")
     
     host_value = ""
     token_value = ""
@@ -68,40 +86,31 @@ def main():
     table_value = "country_to_currency"     # Default value
     job_id_value = ""
     warehouse_id_value = ""
-      # Check if the terraform.tfvars file exists and is readable
     if tfvars_path.exists():
-        print(f"terraform.tfvars exists: {tfvars_path}")
+        debug_print(f"terraform.tfvars exists: {tfvars_path}")
         try:
-            # Try a completely different approach - direct file loading
             try:
-                # Try with absolute path
                 abs_path = os.path.abspath(tfvars_path)
-                print(f"Trying absolute path: {abs_path}")
-                
-                # Try to load with direct open
+                debug_print(f"Trying absolute path: {abs_path}")
                 with open(abs_path, 'r') as f:
                     tfvars_content = f.read()
-                    print(f"Successfully read {len(tfvars_content)} characters from terraform.tfvars with absolute path")
+                    debug_print(f"Successfully read {len(tfvars_content)} characters from terraform.tfvars with absolute path")
             except Exception as e:
-                print(f"Failed with absolute path: {e}")
-                # Try with relative path from current working directory
+                debug_print(f"Failed with absolute path: {e}")
                 relative_path = "../terraform/terraform.tfvars"
-                print(f"Trying relative path: {relative_path}")
+                debug_print(f"Trying relative path: {relative_path}")
                 with open(relative_path, 'r') as f:
                     tfvars_content = f.read()
-                    print(f"Successfully read {len(tfvars_content)} characters from terraform.tfvars with relative path")
+                    debug_print(f"Successfully read {len(tfvars_content)} characters from terraform.tfvars with relative path")
             
-            # Print part of the content for debugging (without sensitive content)
-            print(f"Read {len(tfvars_content)} characters from terraform.tfvars")
+            debug_print(f"Read {len(tfvars_content)} characters from terraform.tfvars")
             lines = tfvars_content.splitlines()
-            print(f"Sample lines (filtered):")
+            debug_print(f"Sample lines (filtered):")
             for line in lines[:3]:
                 if not "token" in line.lower():
-                    print(f"  {line}")
-              # Very simple direct extraction of key values using regex patterns
+                    debug_print(f"  {line}")
             import re
             
-            # Extract values directly with regex patterns
             host_match = re.search(r'databricks_host\s*=\s*"([^"]+)"', tfvars_content)
             token_match = re.search(r'databricks_token\s*=\s*"([^"]+)"', tfvars_content)
             catalog_match = re.search(r'catalog_name\s*=\s*"([^"]+)"', tfvars_content)
@@ -109,7 +118,6 @@ def main():
             table_match = re.search(r'table_name\s*=\s*"([^"]+)"', tfvars_content)
             warehouse_match = re.search(r'databricks_warehouse_id\s*=\s*"([^"]+)"', tfvars_content)
             
-            # Direct line by line parsing for terraform.tfvars
             tfvars_dict = {}
             for line in tfvars_content.splitlines():
                 line = line.strip()
@@ -119,14 +127,11 @@ def main():
                     key, value = line.split('=', 1)
                     key = key.strip()
                     value = value.strip()
-                    # Remove quotes if present
                     if value.startswith('"') and value.endswith('"'):
                         value = value[1:-1]
                     tfvars_dict[key] = value
             
-            # Debug the keys that are available
-            print("Keys in tfvars_dict:", list(tfvars_dict.keys()))
-              # Set values from regex matches (most reliable)
+            debug_print("Keys in tfvars_dict:", list(tfvars_dict.keys()))
             if host_match:
                 host_value = host_match.group(1)
             if token_match:
@@ -139,7 +144,6 @@ def main():
                 table_value = table_match.group(1)
             if warehouse_match:
                 warehouse_id_value = warehouse_match.group(1)
-              # Fallback to dictionary parsing if regex didn't work
             if not host_value and 'databricks_host' in tfvars_dict:
                 host_value = tfvars_dict['databricks_host']
             if not token_value and 'databricks_token' in tfvars_dict:
@@ -152,32 +156,28 @@ def main():
                 table_value = tfvars_dict['table_name']
             if not warehouse_id_value and 'databricks_warehouse_id' in tfvars_dict:
                 warehouse_id_value = tfvars_dict['databricks_warehouse_id']
-              # Debug: Print what was found 
-            print(f"Found host match: {bool(host_value)}")
-            print(f"Found token match: {bool(token_value)}")
-            print(f"Found catalog match: {bool(catalog_value)}")
-            print(f"Found schema match: {bool(schema_value)}")
-            print(f"Found table match: {bool(table_value)}")
-            print(f"Found warehouse match: {bool(warehouse_id_value)}")
+            debug_print(f"Found host match: {bool(host_value)}")
+            debug_print(f"Found token match: {bool(token_value)}")
+            debug_print(f"Found catalog match: {bool(catalog_value)}")
+            debug_print(f"Found schema match: {bool(schema_value)}")
+            debug_print(f"Found table match: {bool(table_value)}")
+            debug_print(f"Found warehouse match: {bool(warehouse_id_value)}")
             
-            # Debug: Print the values (omit token for security)
-            print(f"Host value: {host_value}")
-            print(f"Catalog value: {catalog_value}")
-            print(f"Schema value: {schema_value}")
-            print(f"Table value: {table_value}")
-            print(f"Warehouse ID: {warehouse_id_value}")
+            debug_print(f"Host value: {host_value}")
+            debug_print(f"Catalog value: {catalog_value}")
+            debug_print(f"Schema value: {schema_value}")
+            debug_print(f"Table value: {table_value}")
+            debug_print(f"Warehouse ID: {warehouse_id_value}")
         except Exception as e:
             st.warning(f"Could not load configuration: {str(e)}")
-            print(f"Error loading config: {str(e)}")
+            debug_print(f"Error loading config: {str(e)}")
     
-    # Try to load job ID from job_id.txt
     if job_id_path.exists():
         try:
             with open(job_id_path, 'r') as f:
                 job_id_value = f.read().strip()
         except Exception:
             pass
-      # If not authenticated, show the login form
     if not st.session_state.authenticated:
         with st.container():
             st.header("Connect to Databricks")
@@ -195,7 +195,6 @@ def main():
                         progress_placeholder = st.empty()
                         progress_placeholder.progress(0)
                         
-                        # Create config
                         progress_placeholder.progress(10)
                         config = AppConfig(
                             host=host, 
@@ -208,10 +207,8 @@ def main():
                         )
                         progress_placeholder.progress(20)
                         
-                        # Create client
                         client = DatabricksClient(config)
                         progress_placeholder.progress(40)
-                          # Test connection with a timeout approach that works on Windows
                         import threading
                         import time
                         
@@ -228,26 +225,21 @@ def main():
                                 except Exception as e:
                                     result["error"] = e
                             
-                            # Create and start the thread
                             thread = threading.Thread(target=_test_connection)
                             thread.daemon = True
                             thread.start()
                             
-                            # Wait for the thread to finish or timeout
                             thread.join(timeout)
                             
                             if thread.is_alive():
-                                # Thread is still running after timeout
                                 raise TimeoutException("Connection test timed out")
                             
-                            # Thread completed, check result
                             if result["error"]:
                                 raise result["error"]
                             
                             return result["success"]
                         
                         try:
-                            # Test connection
                             progress_placeholder.progress(60)
                             connection_successful = test_connection_with_timeout(client, timeout=15)
                             progress_placeholder.progress(90)
@@ -273,7 +265,6 @@ def main():
                         st.error(f"Error connecting to Databricks: {type(e).__name__}: {str(e)}")
                         st.info("Check the terminal for more detailed error information.")
         
-        # Show project information
         with st.expander("About This Project", expanded=False):
             st.markdown("""
             ## Country-Currency App
@@ -294,10 +285,8 @@ def main():
             - Personal access token with appropriate permissions
             """)
     else:
-        # If authenticated, check if the data is ready
         if not st.session_state.data_loaded:
             with st.spinner("Checking if data is available..."):
-                # Check if job_id is provided and check the job status
                 if st.session_state.config.job_id:
                     job_status = check_databricks_job_status(
                         st.session_state.databricks_client,
@@ -311,7 +300,6 @@ def main():
                         st.warning("Data loading job is still running. Please wait or proceed with caution.")
                         st.session_state.data_loaded = False
                     else:
-                        # Check if the table exists and has data regardless of job status
                         try:
                             operations = DataOperations(st.session_state.databricks_client)
                             count = operations.count_records()
@@ -324,7 +312,6 @@ def main():
                             st.error(f"Error checking table: {str(e)}")
                             st.session_state.data_loaded = False
                 else:
-                    # If no job_id, just check if the table has data
                     try:
                         operations = DataOperations(st.session_state.databricks_client)
                         count = operations.count_records()
@@ -332,12 +319,11 @@ def main():
                             st.session_state.data_loaded = True
                         else:
                             st.warning("No data found in the table. Some features may be limited.")
-                            st.session_state.data_loaded = True  # Still allow access to the app
+                            st.session_state.data_loaded = True
                     except Exception as e:
                         st.error(f"Error checking table: {str(e)}")
                         st.session_state.data_loaded = False
 
-        # Render the main content based on the current view
         render_main_view()
         render_crud_views()
 

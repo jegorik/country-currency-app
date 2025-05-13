@@ -70,7 +70,8 @@ echo -e "${BLUE}Starting Streamlit app...${NC}"
 echo -e "${GREEN}The app will be available at http://localhost:8501${NC}"
 echo -e "${YELLOW}Press Ctrl+C to stop the app${NC}"
 
-# Start Streamlit app
+# Start Streamlit app with debug mode disabled (no debug prints)
+# To enable debug mode, use: DEBUG_MODE=1 streamlit run app.py
 streamlit run app.py
 
 # Handle exit
