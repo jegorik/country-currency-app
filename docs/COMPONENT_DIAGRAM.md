@@ -9,7 +9,7 @@ This document provides a visual representation of the Country Currency App's com
 ```
 ┌───────────────────┐     ┌─────────────────┐     ┌─────────────────┐
 │                   │     │                 │     │                 │
-│   CSV Data File   │────▶│  Databricks     │────▶│  Delta Table    │
+│   CSV Data File   │───> │  Databricks     │────>│  Delta Table    │
 │                   │     │  Notebook       │     │                 │
 └───────────────────┘     └─────────────────┘     └─────────────────┘
                                │                           │
@@ -17,7 +17,7 @@ This document provides a visual representation of the Country Currency App's com
                                ▼                           ▼
 ┌───────────────────┐     ┌─────────────────┐     ┌─────────────────┐
 │                   │     │                 │     │                 │
-│   GitHub Actions  │────▶│  Terraform      │────▶│  Databricks     │
+│   GitHub Actions  │────>│  Terraform      │────>│  Databricks     │
 │   CI/CD Pipeline  │     │  Configuration  │     │  Resources      │
 │                   │     │                 │     │                 │
 └───────────────────┘     └─────────────────┘     └─────────────────┘
@@ -42,7 +42,7 @@ The GitHub Actions workflow manages the following steps:
 ```
 ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
 │                 │     │                 │     │                 │
-│    Validate     │────▶│      Test       │────▶│     Deploy      │
+│    Validate     │────>│      Test       │────>│     Deploy      │
 │                 │     │                 │     │                 │
 └─────────────────┘     └─────────────────┘     └─────────────────┘
 ```

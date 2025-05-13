@@ -111,11 +111,6 @@ resource "databricks_sql_table" "table" {
     type    = "INT"
     comment = "ISO 4217 numeric currency code"
   }
-  column {
-    name    = "processing_time"
-    type    = "TIMESTAMP"
-    comment = "Timestamp when the data was processed"
-  }
 
   depends_on = [databricks_schema.schema, null_resource.start_warehouse]
 }
@@ -197,6 +192,8 @@ resource "null_resource" "trigger_job" {
 
   provisioner "local-exec" {
     command = <<-EOT
+      echo "Waiting 5 seconds before triggering job..."
+      sleep 5
       echo "Triggering job ${databricks_job.load_data_job.id} to load country-currency data..."
       response=$(curl -s -w "\n%%{http_code}" -X POST "${var.databricks_host}/api/2.1/jobs/run-now" \
         -H "Authorization: Bearer ${var.databricks_token}" \

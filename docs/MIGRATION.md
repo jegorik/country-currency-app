@@ -87,13 +87,13 @@ In case the migration encounters critical issues:
 
 ## Timeline
 
-| Phase | Estimated Duration | Recommended Timing |
-|-------|-------------------|-------------------|
-| Preparation | 1-2 days | Before sprint start |
-| Dev Migration | 1 day | Early in sprint |
-| Test Migration | 1 day | Mid-sprint |
-| Production Migration | 1 day | During maintenance window |
-| Post-Migration | Ongoing | Following sprint |
+| Phase                | Estimated Duration | Recommended Timing        |
+|----------------------|--------------------|---------------------------|
+| Preparation          | 1-2 days           | Before sprint start       |
+| Dev Migration        | 1 day              | Early in sprint           |
+| Test Migration       | 1 day              | Mid-sprint                |
+| Production Migration | 1 day              | During maintenance window |
+| Post-Migration       | Ongoing            | Following sprint          |
 
 ## Success Criteria
 

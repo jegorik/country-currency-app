@@ -70,12 +70,12 @@ If validation fails, check the following:
 
 ## Common Validation Errors and Solutions
 
-| Error | Possible Cause | Solution |
-|-------|---------------|----------|
-| `ModuleNotFoundError: No module named 'pyspark'` | Missing mock module | Add the module to `setup_mock_modules()` in the validation script |
-| `SyntaxError: invalid syntax` | Python version incompatibility | Ensure notebook code is compatible with Python 3.6+ |
-| `Invalid notebook format` | Malformed JSON in notebook | Check cell metadata and notebook structure |
-| `ImportError: cannot import name X from Y` | Using Databricks-specific features | Mock the specific function or class being imported |
+| Error                                            | Possible Cause                     | Solution                                                          |
+|--------------------------------------------------|------------------------------------|-------------------------------------------------------------------|
+| `ModuleNotFoundError: No module named 'pyspark'` | Missing mock module                | Add the module to `setup_mock_modules()` in the validation script |
+| `SyntaxError: invalid syntax`                    | Python version incompatibility     | Ensure notebook code is compatible with Python 3.6+               |
+| `Invalid notebook format`                        | Malformed JSON in notebook         | Check cell metadata and notebook structure                        |
+| `ImportError: cannot import name X from Y`       | Using Databricks-specific features | Mock the specific function or class being imported                |
 
 ## Version Compatibility
 
