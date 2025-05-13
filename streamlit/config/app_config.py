@@ -14,8 +14,14 @@ class AppConfig:
         self.table = table
         self.job_id = job_id
         self.warehouse_id = warehouse_id
-        
     @property
     def full_table_name(self) -> str:
-        """Return the fully qualified table name."""
-        return f"{self.catalog}.{self.schema}.{self.table}"
+        """Return the fully qualified table name with proper quoting for identifiers with special characters."""
+        # Quote catalog name if it contains hyphens or other special characters
+        catalog = f"`{self.catalog}`" if "-" in self.catalog else self.catalog
+        # Quote schema name if it contains hyphens or other special characters
+        schema = f"`{self.schema}`" if "-" in self.schema else self.schema
+        # Quote table name if it contains hyphens or other special characters
+        table = f"`{self.table}`" if "-" in self.table else self.table
+        
+        return f"{catalog}.{schema}.{table}"
