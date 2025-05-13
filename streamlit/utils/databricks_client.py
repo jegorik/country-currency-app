@@ -5,6 +5,11 @@ from databricks.sdk import WorkspaceClient
 from databricks.sql import connect
 from config.app_config import AppConfig
 
+# Define a timeout exception for cross-platform compatibility
+class TimeoutException(Exception):
+    """Exception raised when an operation times out."""
+    pass
+
 class DatabricksClient:
     """Client for interacting with Databricks APIs."""
     
@@ -17,6 +22,7 @@ class DatabricksClient:
     def test_connection(self) -> bool:
         """Test the connection to Databricks."""
         try:
+            print(f"Testing workspace API connection to {self.config.host}...")
             # Test workspace API connection
             self.workspace_client = WorkspaceClient(
                 host=self.config.host,
@@ -24,30 +30,96 @@ class DatabricksClient:
             )
             
             # Get current user to test connection
+            print("Testing API authentication...")
             user = self.workspace_client.current_user.me()
+            print(f"API authentication successful. Connected as: {user.user_name if hasattr(user, 'user_name') else 'Unknown'}")
             
-            # Test SQL connection
-            with connect(
-                server_hostname=self.config.host.replace("https://", ""),
-                http_path="sql/protocolv1/o/0/0",
-                access_token=self.config.token
-            ) as connection:
-                with connection.cursor() as cursor:
-                    cursor.execute(f"SELECT 1")
-                    result = cursor.fetchall()
+            # Test SQL connection with timeout using threading approach (Windows compatible)
+            import threading
+            import socket
+            
+            # Set a timeout for socket operations as a backup
+            default_timeout = socket.getdefaulttimeout()
+            socket.setdefaulttimeout(30)  # Increased to 30 seconds timeout
+            sql_success = False            
+            sql_error = None
+            
+            def _test_sql_connection():
+                nonlocal sql_success, sql_error
+                try:
+                    server_hostname = self.config.host.replace("https://", "")
+                    # Try to use warehouse_id if available
+                    if hasattr(self.config, 'warehouse_id') and self.config.warehouse_id:
+                        print(f"Using warehouse ID: {self.config.warehouse_id}")
+                        http_path = f"sql/1.0/warehouses/{self.config.warehouse_id}"
+                    else:
+                        print("No warehouse ID provided, using default path")
+                        http_path = "sql/1.0/warehouses/auto"
                     
+                    print(f"Testing SQL connection to {server_hostname} with http_path={http_path}...")
+                    print("Connection timeout set to 30 seconds...")
+                    # Use a more specific SQL endpoint path for Databricks
+                    with connect(
+                        server_hostname=server_hostname,
+                        http_path=http_path,
+                        access_token=self.config.token,
+                        connect_timeout=30
+                    ) as connection:
+                        with connection.cursor() as cursor:
+                            print("Executing test query...")
+                            cursor.execute("SELECT 1")
+                            result = cursor.fetchall()
+                            print(f"Query result: {result}")
+                            sql_success = True
+                except Exception as e:
+                    sql_success = False
+                    sql_error = str(e)
+                    print(f"SQL connection error: {sql_error}")
+            
+            # Use threading for a more robust timeout solution
+            sql_success = False
+            sql_thread = threading.Thread(target=_test_sql_connection)
+            sql_thread.daemon = True
+            sql_thread.start()
+            sql_thread.join(timeout=30)  # Increased to 30 seconds
+            
+            # Restore default socket timeout
+            socket.setdefaulttimeout(default_timeout)
+            
+            if not sql_success:
+                if sql_thread.is_alive():
+                    print("SQL connection test timed out")
+                    raise TimeoutError("SQL connection test timed out after 30 seconds")
+                else:
+                    print("SQL connection test failed")                    
+                    if sql_error:
+                        raise ConnectionError(f"SQL connection test failed: {sql_error}")
+                    else:
+                        raise ConnectionError("SQL connection test failed")
+            
+            print("Connection test successful!")
             return True
         except Exception as e:
-            print(f"Connection error: {str(e)}")
+            print(f"Connection error: {type(e).__name__}: {str(e)}")
+            import traceback
+            traceback.print_exc()            
             return False
     
     def execute_query(self, query: str, params: tuple = None) -> list:
         """Execute a SQL query and return the results."""
         try:
+            server_hostname = self.config.host.replace("https://", "")
+            # Try to use warehouse_id if available
+            if hasattr(self.config, 'warehouse_id') and self.config.warehouse_id:
+                http_path = f"sql/1.0/warehouses/{self.config.warehouse_id}"
+            else:
+                http_path = "sql/1.0/warehouses/auto"
+                
             with connect(
-                server_hostname=self.config.host.replace("https://", ""),
-                http_path="sql/protocolv1/o/0/0",
-                access_token=self.config.token
+                server_hostname=server_hostname,
+                http_path=http_path,
+                access_token=self.config.token,
+                connect_timeout=30
             ) as connection:
                 with connection.cursor() as cursor:
                     if params:
