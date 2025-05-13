@@ -5,7 +5,8 @@ App configuration module for Streamlit application.
 class AppConfig:
     """Configuration for the Streamlit app."""
     
-    def __init__(self, host: str, token: str, catalog: str, schema: str, table: str, job_id: str = None, warehouse_id: str = None):
+    def __init__(self, host: str = "", token: str = "", catalog: str = "main", schema: str = "default", 
+                table: str = "country_currency", job_id: str = None, warehouse_id: str = None):
         """Initialize the application configuration."""
         self.host = host
         self.token = token

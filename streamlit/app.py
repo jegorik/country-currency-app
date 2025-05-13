@@ -35,6 +35,7 @@ from ui.main_view import render_main_view
 from ui.crud_views import render_crud_views
 from config.app_config import AppConfig
 from utils.status_checker import check_databricks_job_status
+from templates.html_components import app_header, footer, section_header, card_start, card_end
 
 # Set page configuration
 st.set_page_config(
@@ -43,6 +44,11 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
+
+# Load custom CSS
+css_path = os.path.join(os.path.dirname(__file__), "ui", "style.css")
+with open(css_path, 'r') as f:
+    st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
 
 # Initialize session state for storing application state
 if "authenticated" not in st.session_state:
@@ -58,13 +64,8 @@ if "authenticated" not in st.session_state:
 
 def main():
     """Main application entry point."""
-    # Custom styling
-    with open(Path(__file__).parent / "ui" / "style.css") as f:
-        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
-
-    # Render the application header
-    st.title("Country-Currency Management")
-    st.markdown("---")
+    # Render the application header using our custom HTML component
+    st.markdown(app_header(), unsafe_allow_html=True)
 
     # Render sidebar with navigation and authentication
     render_sidebar()
@@ -177,10 +178,11 @@ def main():
             with open(job_id_path, 'r') as f:
                 job_id_value = f.read().strip()
         except Exception:
-            pass
-    if not st.session_state.authenticated:
+            pass    
+    if not st.session_state.authenticated: 
         with st.container():
-            st.header("Connect to Databricks")
+            st.markdown(section_header("🔑", "Connect to Databricks"), unsafe_allow_html=True)
+            st.markdown(card_start(), unsafe_allow_html=True)
             with st.form("login_form"):
                 host = st.text_input("Databricks Host", placeholder="https://your-databricks-instance.cloud.databricks.com", value=host_value)
                 token = st.text_input("Databricks Token", type="password", value=token_value)
@@ -326,6 +328,9 @@ def main():
 
         render_main_view()
         render_crud_views()
+    
+    # Add footer at the bottom of the page
+    st.markdown(footer("v1.0.0"), unsafe_allow_html=True)
 
 if __name__ == "__main__":
     main()
