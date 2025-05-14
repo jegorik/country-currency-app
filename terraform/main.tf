@@ -146,7 +146,7 @@ resource "databricks_sql_table" "table" {
   }
 
   depends_on = [
-    databricks_schema.schema, 
+    databricks_schema.schema,
     null_resource.start_warehouse_windows,
     null_resource.start_warehouse_linux
   ]
