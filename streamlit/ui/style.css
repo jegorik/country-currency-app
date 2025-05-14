@@ -17,6 +17,13 @@ h1 {
     margin-bottom: 30px;
 }
 
+/* Button alignment fix */
+.button-align-container {
+    display: flex;
+    align-items: flex-end;
+    height: 92px; /* Adjust this value as needed to align with input field */
+}
+
 h2, h3 {
     color: #4da6ff;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;

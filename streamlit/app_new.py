@@ -26,6 +26,25 @@ def debug_print(*args, **kwargs):
         print(*args, **kwargs)
     logger.debug(" ".join(str(a) for a in args))
 
+# Function to refresh data by clearing cache state
+def refresh_data():
+    """
+    Refresh data by clearing any cached state.
+    Call this function after any data modification operation.
+    """
+    # Clear any cached data
+    if "last_refresh" in st.session_state:
+        st.session_state.pop("last_refresh", None)
+    
+    # Reset to first page of results
+    if "current_page" in st.session_state:
+        st.session_state.current_page = 1
+    
+    # Log the refresh action
+    logger.info("Data refresh triggered")
+    
+    # Note: We keep data_loaded=True since we're just refreshing, not disconnecting
+
 # Add the project to the Python path
 sys.path.insert(0, str(Path(__file__).parent))
 
@@ -38,6 +57,7 @@ from ui.crud_views import render_crud_views
 from config.app_config import AppConfig
 from utils.status_checker import check_databricks_job_status
 from templates.html_components import app_header, footer
+from app_utils import refresh_data
 
 # Set page configuration
 st.set_page_config(

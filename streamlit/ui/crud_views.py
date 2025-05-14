@@ -90,6 +90,9 @@ def _render_add_view():
                 time_placeholder = st.empty()
                 time_placeholder.text("Redirecting to home view in 3 seconds...")
                 time.sleep(3)
+                # Обновляем данные через специальную функцию
+                from app_utils import refresh_data
+                refresh_data()
                 st.session_state.current_view = "home"
                 st.rerun()
             except Exception as e:
@@ -148,6 +151,7 @@ def _render_edit_view():
                 if st.form_submit_button("Cancel"):
                     st.session_state.current_view = "home"
                     st.session_state.edit_record_id = None
+                    # При отмене не нужно сбрасывать кэш данных, так как данные не изменились
                     st.rerun()
             
             if submitted:
@@ -189,8 +193,12 @@ def _render_edit_view():
                         time_placeholder = st.empty()
                         time_placeholder.text("Redirecting to home view in 3 seconds...")
                         time.sleep(3)
+                        # Обновляем данные через специальную функцию
+                        from app_utils import refresh_data
+                        refresh_data()
                         st.session_state.current_view = "home"
                         st.session_state.edit_record_id = None
+                        # Принудительное обновление данных
                         st.rerun()
                     else:
                         st.markdown(error_message("Failed to update record. Please check the database connection."), unsafe_allow_html=True)
@@ -254,6 +262,9 @@ def _render_delete_view():
                     time_placeholder = st.empty()
                     time_placeholder.text("Redirecting to home view in 3 seconds...")
                     time.sleep(3)
+                    # Обновляем данные через специальную функцию
+                    from app_utils import refresh_data
+                    refresh_data()
                     st.session_state.current_view = "home"
                     st.session_state.delete_record_id = None
                     st.rerun()
@@ -264,6 +275,7 @@ def _render_delete_view():
             if st.button("Cancel", use_container_width=True, key="delete_cancel_btn"):
                 st.session_state.current_view = "home"
                 st.session_state.delete_record_id = None
+                # При отмене не нужно сбрасывать кэш данных, так как данные не изменились
                 st.rerun()
     except Exception as e:
         st.markdown(error_message(f"Error loading record: {str(e)}"), unsafe_allow_html=True)

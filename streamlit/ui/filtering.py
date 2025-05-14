@@ -22,9 +22,11 @@ def render_filtering_controls():
     """
     st.markdown(card_start(), unsafe_allow_html=True)
     
+    # Use standard Streamlit components but adjust the layout
     col1, col2 = st.columns([3, 1])
     
     with col1:
+        # Add search label and text input
         st.markdown(field_label("Search", "Filter by country, currency, or codes"), unsafe_allow_html=True)
         filter_query = st.text_input(
             "",
@@ -37,12 +39,18 @@ def render_filtering_controls():
             # Reset to first page when filter changes
             st.session_state.current_page = 1
     
-    with col2:
-        # Выровняем кнопку с текстовым полем, добавив правильное количество отступов
-        st.markdown("<div style='padding-top: 25px;'></div>", unsafe_allow_html=True)
-        if st.button("🔄 Refresh Data"):
-            # Force refresh by clearing caches
-            st.session_state.pop("last_refresh", None)
+    # Space between columns
+    st.write("")
+    
+    # Create a new row of columns for the button with proper alignment
+    col1, col2, col3 = st.columns([2.5, 0.5, 1])
+    
+    # Put the button in the third column, which aligns it to the right
+    with col3:
+        if st.button("🔄 Refresh"):
+            # Force refresh by clearing caches using the central function
+            from app_utils import refresh_data
+            refresh_data(reset_page=True, show_message=True)
             st.rerun()
     
     # Advanced filtering (expandable)
