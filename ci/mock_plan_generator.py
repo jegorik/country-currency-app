@@ -21,7 +21,7 @@ def generate_mock_terraform_plan():
     # Basic plan structure
     plan = {
         "format_version": "0.2",
-        "terraform_version": "1.0.0",
+        "terraform_version": "1.11",
         "planned_values": {
             "root_module": {
                 "resources": []

@@ -68,7 +68,7 @@ jobs:
           # Run the mock generator with verbose error handling
           python ../ci/mock_plan_generator.py --output terraform-plan.json
           
-          # Verify the JSON is valid
+          # Verify the JSON is validpip install databricks-cl
           python -c "import json; json.load(open('terraform-plan.json')); print('JSON validation successful')"
           
           # Create a fallback plan if the mock generator failed
