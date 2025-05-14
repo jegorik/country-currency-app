@@ -16,11 +16,6 @@ output "job_id" {
   value       = databricks_job.load_data_job.id
 }
 
-resource "local_file" "job_id_file" {
-  content  = databricks_job.load_data_job.id
-  filename = "${path.module}/job_id.txt"
-}
-
 output "job_url" {
   description = "URL to access the data loading job in Databricks UI"
   value       = "${var.databricks_host}/#job/${databricks_job.load_data_job.id}"

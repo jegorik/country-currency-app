@@ -1,0 +1,16 @@
+# OS agnostic deployment target for Makefile
+# Add this section to your Makefile to enable cross-platform deployment
+
+# Detect OS and set appropriate execute command
+ifeq ($(OS),Windows_NT)
+	EXEC_CMD = powershell.exe -ExecutionPolicy Bypass -File
+	DEPLOY_SCRIPT = scripts\deploy_windows.ps1
+else
+	EXEC_CMD = bash
+	DEPLOY_SCRIPT = scripts/deploy_linux.sh
+endif
+
+# Deploy based on OS
+deploy:
+	@echo "Deploying for $(ENV) environment..."
+	@$(EXEC_CMD) $(DEPLOY_SCRIPT) $(ENV)

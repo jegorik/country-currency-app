@@ -65,6 +65,39 @@ streamlit run app.py
 
 The application will be available at http://localhost:8501.
 
+## Cross-Platform Compatibility
+
+This Streamlit application is designed to work on both Windows and Linux/macOS environments. We provide platform-specific launch scripts as well as a cross-platform launcher:
+
+### Running the App
+
+1. **Cross-platform launcher (Recommended)**:
+
+   ```bash
+   # Automatically detects your OS and runs the appropriate script
+   ./start_app_cross_platform.sh
+   ```
+
+2. **Platform-specific launchers**:
+
+   - On Linux/macOS:
+     ```bash
+     ./start_app_new.sh
+     # or for legacy UI
+     ./start_app.sh
+     ```
+
+   - On Windows:
+     ```powershell
+     .\start_app.ps1
+     ```
+
+### Platform-Specific Notes:
+
+- **Windows**: Requires PowerShell 5.0+ for the PowerShell scripts
+- **Linux/macOS**: Requires Bash 4.0+ for the shell scripts
+- **All platforms**: Python 3.8+ and Streamlit 1.18+ are required
+
 ## Development
 
 ### Adding New Features

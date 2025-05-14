@@ -85,16 +85,13 @@ install-streamlit:
 	@echo "Installing Streamlit app dependencies..."
 	@cd streamlit && pip install -r requirements.txt
 
-# Start the Streamlit application
+# Start the Streamlit application using unified launcher
 streamlit-app: install-streamlit
-	@echo "Starting Streamlit application..."
-ifeq ($(OS),Windows_NT)
-	@cd streamlit && powershell -ExecutionPolicy Bypass -File start_app.ps1
-else
-	@cd streamlit && bash start_app.sh
-endif
+	@echo "Starting Streamlit application using unified launcher..."
+	@cd streamlit && bash unified_start_app.sh
 
-# Wait for job completion and then start the Streamlit application
+# For now, keep the original wait-and-start scripts since they contain specific waiting logic
+# We can unify them in a future update
 wait-and-start-ui: install-streamlit
 	@echo "Waiting for job to complete and then starting Streamlit app..."
 ifeq ($(OS),Windows_NT)
@@ -108,3 +105,19 @@ deploy-with-ui: deploy-dev streamlit-app
 
 # Full deployment with waiting for job completion
 deploy-and-wait: deploy-dev wait-and-start-ui
+# OS agnostic deployment target for Makefile
+# Simplified deployment using unified scripts
+
+# Detect OS and set appropriate execute command
+ifeq ($(OS),Windows_NT)
+	EXEC_CMD = powershell.exe -ExecutionPolicy Bypass -File
+	DEPLOY_SCRIPT = scripts\unified_deploy.ps1
+else
+	EXEC_CMD = bash
+	DEPLOY_SCRIPT = scripts/unified_deploy.sh
+endif
+
+# Deploy based on OS using unified deployment scripts
+deploy:
+	@echo "Deploying using unified deployment script..."
+	@$(EXEC_CMD) $(DEPLOY_SCRIPT)

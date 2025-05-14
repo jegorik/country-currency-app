@@ -90,23 +90,25 @@ country-currency-app/
 
 ### Quick Start Deployment
 
-#### Option 1: Automatic OS Detection
+#### Simplified Cross-Platform Deployment
+Our new unified deployment script automatically detects your operating system and runs the appropriate commands:
+
 ```bash
-# Run the auto-detect script that will choose the appropriate deployment script
-bash scripts/deploy.sh
+# Run the unified deployment script (works on Windows, Linux, and macOS)
+bash scripts/unified_deploy.sh
 ```
 
-#### Option 2: OS-Specific Scripts
-For Windows:
+This script will:
+1. Automatically detect your operating system
+2. Check for required dependencies
+3. Run the appropriate deployment process for your platform
+4. Set up all necessary Terraform resources
+
+For advanced users who prefer direct control:
+
 ```powershell
-# Run the Windows-specific deployment script
-.\scripts\deploy_windows.ps1
-```
-
-For Linux/macOS:
-```bash
-# Run the Linux-specific deployment script
-bash scripts/deploy_linux.sh
+# Windows users can directly use the PowerShell script
+.\scripts\unified_deploy.ps1
 ```
 
 ## Cross-Platform Compatibility
@@ -143,6 +145,53 @@ bash scripts/check_dependencies.sh
 ```
 
 This will verify that all required tools are installed on your system.
+
+## Deployment Instructions
+
+### Cross-Platform Deployment
+
+This project is designed to be OS-agnostic and can be deployed on both Windows and Linux/macOS. There are several ways to deploy the application:
+
+1. **Using the Makefile (Recommended)**:
+
+   ```bash
+   # Deploy using the OS-agnostic Makefile target
+   make deploy ENV=dev
+   ```
+
+   The Makefile automatically detects your operating system and runs the appropriate deployment script.
+
+2. **Using the auto-detect shell script**:
+
+   ```bash
+   # Run the deploy script that auto-detects OS
+   ./scripts/deploy.sh
+   ```
+
+3. **Directly using OS-specific scripts**:
+
+   - On Linux/macOS:
+     ```bash
+     ./scripts/deploy_linux.sh
+     ```
+
+   - On Windows (PowerShell):
+     ```powershell
+     .\scripts\deploy_windows.ps1
+     ```
+
+### Requirements
+
+- **All Platforms**: Terraform 1.0+, Databricks CLI
+- **Linux/macOS**: Bash 4.0+, curl, grep, sed
+- **Windows**: PowerShell 5.0+
+
+### Environment Variables
+
+The following environment variables can be set to override defaults:
+
+- `DATABRICKS_HOST`: Databricks workspace URL
+- `DATABRICKS_TOKEN`: Personal access token for authentication
 
 ## Streamlit Web Application
 

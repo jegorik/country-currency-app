@@ -4,3 +4,4 @@ databricks-connect>=14.0.0
 databricks-sql-connector>=3.0.0
 databricks-sdk>=0.20.0
 PyArrow>=15.0.0
+plotly>=6.0.1
