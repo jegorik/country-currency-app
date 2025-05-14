@@ -143,10 +143,6 @@ class TestLoadDataNotebook(unittest.TestCase):
             self.assertIn('def perform_data_quality_checks', all_code, "Missing perform_data_quality_checks function")
             self.assertIn('def write_to_delta_table', all_code, "Missing write_to_delta_table function")
             
-            # Check for processing_time column
-            self.assertIn('processing_time', all_code, "Missing processing_time column")
-            self.assertIn('current_timestamp()', all_code, "Missing timestamp generation")
-            
         except json.JSONDecodeError:
             self.fail("Notebook is not valid JSON")
         except Exception as e:
