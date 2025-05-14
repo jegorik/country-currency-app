@@ -92,6 +92,14 @@ class DataOperations:
             }
         else:
             record_dict = record
+        
+        # Проверяем существует ли запись перед обновлением
+        check_query = f"SELECT COUNT(*) as count FROM {self.table_name} WHERE country_code = ?"
+        check_result = self.client.execute_query(check_query, (record_dict['country_code'],))
+        
+        if not check_result or check_result[0]['count'] == 0:
+            print(f"Cannot update: Record with country_code {record_dict['country_code']} does not exist")
+            return False
             
         query = f"""
         UPDATE {self.table_name}
@@ -113,10 +121,25 @@ class DataOperations:
         )
         
         try:
+            print(f"Executing update query for country_code: {record_dict['country_code']}")
+            print(f"Update parameters: {params}")
             self.client.execute_query(query, params)
-            return True
+            
+            # Проверяем успешность обновления
+            verify_query = f"SELECT * FROM {self.table_name} WHERE country_code = ?"
+            verify_result = self.client.execute_query(verify_query, (record_dict['country_code'],))
+            
+            if verify_result:
+                print("Update successful, record verified in database")
+                return True
+            else:
+                print("Update may have failed, could not verify record in database")
+                return False
+                
         except Exception as e:
             print(f"Error updating record: {str(e)}")
+            import traceback
+            traceback.print_exc()
             return False
     
     def delete_record(self, country_code: str) -> bool:

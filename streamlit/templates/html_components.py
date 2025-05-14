@@ -100,11 +100,11 @@ def delete_confirmation():
     """
 
 def info_box(message, title="Information"):
-    """Render an information box"""
+    """Render an info box"""
     return f"""
     <div class="info-box">
-        <strong>{title}</strong>
-        <p>{message}</p>
+        <div class="info-box-title">{title}</div>
+        <div class="info-box-content">{message}</div>
     </div>
     """
 

@@ -174,10 +174,10 @@ def render_data_explorer():
             # Add filters
             filters = []
             if st.session_state.filter_query:
-                filter_str = f"country LIKE '%{st.session_state.filter_query}%' OR " + \
-                            f"country_code LIKE '%{st.session_state.filter_query}%' OR " + \
-                            f"currency_name LIKE '%{st.session_state.filter_query}%' OR " + \
-                            f"currency_code LIKE '%{st.session_state.filter_query}%'"
+                filter_str = f"LOWER(country) LIKE LOWER('%{st.session_state.filter_query}%') OR " + \
+                            f"LOWER(country_code) LIKE LOWER('%{st.session_state.filter_query}%') OR " + \
+                            f"LOWER(currency_name) LIKE LOWER('%{st.session_state.filter_query}%') OR " + \
+                            f"LOWER(currency_code) LIKE LOWER('%{st.session_state.filter_query}%')"
                 filters.append(f"({filter_str})")
                 
             # Add numeric range filters

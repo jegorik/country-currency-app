@@ -38,8 +38,8 @@ def render_filtering_controls():
             st.session_state.current_page = 1
     
     with col2:
-        st.write("")  # Add some space
-        st.write("")  # Add some space
+        # Выровняем кнопку с текстовым полем, добавив правильное количество отступов
+        st.markdown("<div style='padding-top: 25px;'></div>", unsafe_allow_html=True)
         if st.button("🔄 Refresh Data"):
             # Force refresh by clearing caches
             st.session_state.pop("last_refresh", None)
