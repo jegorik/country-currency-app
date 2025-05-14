@@ -145,22 +145,22 @@ def render_data_explorer():
             with col1:
                 if st.button("⏮️ First", disabled=current_page <= 1):
                     st.session_state.current_page = 1
-                    st.experimental_rerun()
+                    st.rerun()
             
             with col2:
                 if st.button("◀️ Previous", disabled=current_page <= 1):
                     st.session_state.current_page = current_page - 1
-                    st.experimental_rerun()
+                    st.rerun()
             
             with col3:
                 if st.button("Next ▶️", disabled=current_page >= total_pages):
                     st.session_state.current_page = current_page + 1
-                    st.experimental_rerun()
+                    st.rerun()
             
             with col4:
                 if st.button("Last ⏭️", disabled=current_page >= total_pages):
                     st.session_state.current_page = total_pages
-                    st.experimental_rerun()
+                    st.rerun()
                     
             # Show pagination info
             st.caption(f"Page {current_page} of {total_pages} ({total_records} total records)")
