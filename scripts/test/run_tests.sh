@@ -48,7 +48,9 @@ case $choice in
     fi
     
     # Run the tests
-    cd "$(dirname "$0")/.."
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+    cd "$PROJECT_ROOT"
     echo -e "${YELLOW}Using Python interpreter: $PYTHON_CMD${NC}"
     $PYTHON_CMD -c "import sys; print(f'Python version: {sys.version}')"
     # Add -W ignore option to suppress deprecation warnings

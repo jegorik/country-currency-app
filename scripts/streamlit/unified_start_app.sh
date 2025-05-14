@@ -103,15 +103,16 @@ run_unix_launcher() {
   
   # Launch the Streamlit app
   echo -e "${GREEN}Launching Streamlit app...${NC}"
-  cd "${SCRIPT_DIR}/../../streamlit"
   
   # Check if the new UI app exists
   if [ -f "${SCRIPT_DIR}/../../streamlit/app_new.py" ]; then
     echo -e "${GREEN}Starting new UI version...${NC}"
-    streamlit run ../../streamlit/app_new.py -- --job_id="$JOB_ID" --workspace_url="$WORKSPACE_URL"
+    cd "${SCRIPT_DIR}/../../streamlit"
+    streamlit run app.py -- --job_id="$JOB_ID" --workspace_url="$WORKSPACE_URL"
   else
     echo -e "${GREEN}Starting standard UI version...${NC}"
-    streamlit run ../../streamlit/app.py -- --job_id="$JOB_ID" --workspace_url="$WORKSPACE_URL"
+    cd "${SCRIPT_DIR}/../../streamlit"
+    streamlit run app.py -- --job_id="$JOB_ID" --workspace_url="$WORKSPACE_URL"
   fi
 }
 

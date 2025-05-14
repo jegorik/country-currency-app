@@ -61,8 +61,10 @@ echo ""
 echo -e "${YELLOW}Initializing Terraform...${NC}"
 
 # Change to the terraform directory
-cd ../terraform || {
-    echo -e "${RED}[ERROR] Cannot find terraform directory!${NC}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+cd "$PROJECT_ROOT/terraform" || {
+    echo -e "${RED}[ERROR] Cannot find terraform directory at $PROJECT_ROOT/terraform!${NC}"
     exit 1
 }
 

@@ -36,7 +36,8 @@ function Execute-TerraformDeployment {
     # Navigate to Terraform directory
     Write-Host "Navigating to Terraform directory..." -ForegroundColor Yellow
     $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-    $TerraformDir = Join-Path -Path (Split-Path -Parent $ScriptDir) -ChildPath "terraform"
+    $ProjectRoot = Split-Path -Parent (Split-Path -Parent $ScriptDir)
+    $TerraformDir = Join-Path -Path $ProjectRoot -ChildPath "terraform"
     Push-Location -Path $TerraformDir
 
     # Initialize Terraform

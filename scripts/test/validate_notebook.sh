@@ -27,7 +27,8 @@ if [ ! -z "$DATABRICKS_HOST" ] && [ ! -z "$DATABRICKS_TOKEN" ]; then
   echo "Databricks credentials found, checking notebook on Databricks..."
   
   # Get the notebook path and job ID from terraform output
-  TERRAFORM_DIR="$SCRIPT_DIR/../terraform"
+  PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+  TERRAFORM_DIR="$PROJECT_ROOT/terraform"
   NOTEBOOK_PATH=$(cd "$TERRAFORM_DIR" && terraform output -raw notebook_path 2>/dev/null || echo "/Shared/country-currency-app/load_data_notebook")
   JOB_ID=$(cd "$TERRAFORM_DIR" && terraform output -raw job_id 2>/dev/null)
   

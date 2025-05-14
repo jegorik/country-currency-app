@@ -95,7 +95,7 @@ check_dependencies() {
 # Function to run Terraform commands (for Linux and macOS)
 run_terraform_deployment() {
   SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-  PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+  PROJECT_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
   
   echo -e "${YELLOW}Navigating to Terraform directory...${NC}"
   cd "$PROJECT_ROOT/terraform" || { 

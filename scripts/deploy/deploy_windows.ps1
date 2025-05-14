@@ -28,7 +28,7 @@ if ($MissingPrerequisites) {
 
 # Initialize Terraform
 Write-Host "`nInitializing Terraform..." -ForegroundColor Yellow
-Push-Location -Path (Join-Path $PSScriptRoot "..\terraform")
+Push-Location -Path (Join-Path (Split-Path -Parent (Split-Path -Parent $PSScriptRoot)) "terraform")
 try {
     terraform init
 

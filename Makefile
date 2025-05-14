@@ -88,16 +88,15 @@ install-streamlit:
 # Start the Streamlit application using unified launcher
 streamlit-app: install-streamlit
 	@echo "Starting Streamlit application using unified launcher..."
-	@cd streamlit && bash unified_start_app.sh
+	@bash scripts/streamlit/unified_start_app.sh
 
-# For now, keep the original wait-and-start scripts since they contain specific waiting logic
-# We can unify them in a future update
+# Using the relocated wait-and-start scripts
 wait-and-start-ui: install-streamlit
 	@echo "Waiting for job to complete and then starting Streamlit app..."
 ifeq ($(OS),Windows_NT)
-	@cd streamlit && powershell -ExecutionPolicy Bypass -File wait_and_start.ps1
+	@powershell -ExecutionPolicy Bypass -File scripts/streamlit/wait_and_start.ps1
 else
-	@cd streamlit && bash wait_and_start.sh
+	@bash scripts/streamlit/wait_and_start.sh
 endif
 
 # Full deployment with Streamlit app (without waiting)

@@ -13,7 +13,8 @@ echo -e "${YELLOW}Configuring Databricks CLI from terraform.tfvars...${NC}"
 
 # Read values from terraform.tfvars
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-TERRAFORM_DIR="$SCRIPT_DIR/../terraform"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+TERRAFORM_DIR="$PROJECT_ROOT/terraform"
 
 # Change to terraform directory
 echo -e "${YELLOW}Accessing terraform.tfvars in $TERRAFORM_DIR...${NC}"
