@@ -135,9 +135,9 @@ Common causes include expired tokens, incorrect host URLs, or misconfigured perm
 Shell script incompatibilities between Windows and Linux operating systems. Scripts may use commands or syntax that are specific to one platform.
 
 **Solution:**
-1. Run the dependency checker before deployment:
+1. Dependencies are automatically checked by the unified deployment scripts:
    ```bash
-   bash scripts/check_dependencies.sh
+   bash /scripts/deploy/unified_deploy.sh
    ```
 
 2. Ensure you're running the latest version of the code that includes OS detection in scripts

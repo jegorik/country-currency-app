@@ -1,6 +1,6 @@
 # Scripts - Utilities
 
-This directory contains utility scripts used across the Country Currency App.
+This directory contains utility scripts used across the Country Currency App. These utility scripts were consolidated in this directory as part of the project reorganization.
 
 ## Files
 
@@ -11,5 +11,9 @@ This directory contains utility scripts used across the Country Currency App.
 ### Check Terraform paths
 
 ```bash
-./check_terraform_paths.sh path/to/terraform/directory
+# Using from the scripts/utils directory
+bash check_terraform_paths.sh path/to/terraform/directory
+
+# Using from project root
+bash scripts/utils/check_terraform_paths.sh path/to/terraform/directory
 ```

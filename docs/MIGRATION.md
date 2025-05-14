@@ -6,6 +6,62 @@ This document outlines the steps for migrating from manual deployments to the au
 
 The Country Currency App has been enhanced with a CI/CD pipeline using GitHub Actions. This transition requires some careful planning to ensure no disruption to existing environments and data.
 
+## Script Relocation and Path Management
+
+### Script Directory Reorganization
+
+In May 2025, the project underwent a significant reorganization of script locations to improve maintainability and organization. Key changes included:
+
+1. **Script Consolidation**: Scripts previously scattered throughout the project were consolidated into subdirectories under `/scripts/`:
+   - `/scripts/deploy/` - Deployment scripts
+   - `/scripts/setup/` - Environment setup scripts
+   - `/scripts/test/` - Testing utilities
+   - `/scripts/utils/` - General utility scripts
+   - `/scripts/streamlit/` - Streamlit application launch scripts (relocated from `/streamlit/` directory)
+
+2. **Path Independence**: All scripts were updated to use relative path calculations instead of hardcoded paths, making them runnable from any directory.
+
+3. **Unified Interfaces**: Script interfaces were standardized to provide consistent command-line arguments and output formatting.
+
+### Path Calculation Pattern
+
+The scripts use the following pattern to determine their location and calculate paths to other project resources:
+
+```bash
+# Get the directory where the script is located
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Calculate path to project root (2 levels up from scripts/subdirectory)
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+
+# Calculate paths to specific directories
+TERRAFORM_DIR="$PROJECT_ROOT/terraform"
+STREAMLIT_DIR="$PROJECT_ROOT/streamlit"
+DATA_DIR="$PROJECT_ROOT/data"
+```
+
+This pattern ensures that scripts can:
+- Be called from any directory
+- Correctly locate other project resources
+- Work consistently across different environments
+
+### Running Relocated Scripts
+
+When running scripts that were previously in a different location:
+
+1. **Update your commands** to use the new path:
+   ```bash
+   # Old (deprecated)
+   bash /streamlit/unified_start_app.sh
+   
+   # New
+   bash /scripts/streamlit/unified_start_app.sh
+   ```
+
+2. **Update CI/CD configurations** to reference the new script locations.
+
+3. **Check for new command-line options** as some scripts have enhanced functionality.
+
 ## Migration Steps
 
 ### 1. Preparation Phase

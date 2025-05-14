@@ -48,16 +48,16 @@ This document summarizes the changes made to make the Country Currency App work 
 - `/scripts/fix_terraform_main.sh`: New script to fix the main.tf file
 - `/scripts/deploy_cross_platform.sh`: New cross-platform deployment script
 - `/scripts/os_detect.sh`: New utility for OS detection
-- `/streamlit/start_app_cross_platform.sh`: New cross-platform app launcher
+- `/streamlit/start_app_cross_platform.sh`: New cross-platform app launcher (now relocated)
 - `/README.md`: Updated with cross-platform deployment instructions
 - `/streamlit/README.md`: Updated with cross-platform launch instructions
 
 ### Recent Improvements
-- `/scripts/unified_deploy.sh`: New unified cross-platform deployment script
-- `/scripts/unified_deploy.ps1`: Enhanced PowerShell script for Windows
+- `/scripts/deploy/unified_deploy.sh`: New unified cross-platform deployment script
+- `/scripts/deploy/unified_deploy.ps1`: Enhanced PowerShell script for Windows
 - `/scripts/cleanup_project.sh`: Script to remove redundant files
-- `/streamlit/unified_start_app.sh`: Unified cross-platform Streamlit launcher
-- `/streamlit/cleanup_streamlit_scripts.sh`: Script to clean up redundant Streamlit scripts
+- `/scripts/streamlit/unified_start_app.sh`: Unified cross-platform Streamlit launcher (relocated from /streamlit)
+- `/scripts/streamlit/README.md`: Documentation for Streamlit launch scripts
 - `/docs/PROJECT-CLEANUP.md`: Documentation of project cleanup process
 - `/Makefile`: Updated to use unified scripts
 
@@ -67,7 +67,7 @@ This document summarizes the changes made to make the Country Currency App work 
 - `/scripts/deploy_cross_platform.sh` (moved to backup)
 - `/scripts/os_detect.sh` (moved to backup)
 - `/scripts/check_dependencies.sh` (moved to backup)
-- `/streamlit/start_app_cross_platform.sh` (moved to backup)
+- `/streamlit/start_app_cross_platform.sh` (moved to backup, now available at `/scripts/streamlit/unified_start_app.sh`)
 
 ## Testing
 
@@ -83,7 +83,7 @@ Run the unified deployment script:
 
 ```bash
 # For all platforms (Windows, Linux, macOS)
-bash scripts/unified_deploy.sh
+bash /scripts/deploy/unified_deploy.sh
 ```
 
 Or use the Makefile target:
@@ -97,7 +97,7 @@ Launch the Streamlit app with:
 
 ```bash
 # For all platforms (Windows, Linux, macOS)
-bash streamlit/unified_start_app.sh
+bash /scripts/streamlit/unified_start_app.sh
 ```
 
 Or use the Makefile target:

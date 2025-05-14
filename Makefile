@@ -110,10 +110,10 @@ deploy-and-wait: deploy-dev wait-and-start-ui
 # Detect OS and set appropriate execute command
 ifeq ($(OS),Windows_NT)
 	EXEC_CMD = powershell.exe -ExecutionPolicy Bypass -File
-	DEPLOY_SCRIPT = scripts\unified_deploy.ps1
+	DEPLOY_SCRIPT = scripts\deploy\unified_deploy.ps1
 else
 	EXEC_CMD = bash
-	DEPLOY_SCRIPT = scripts/unified_deploy.sh
+	DEPLOY_SCRIPT = scripts/deploy/unified_deploy.sh
 endif
 
 # Deploy based on OS using unified deployment scripts

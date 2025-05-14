@@ -27,7 +27,7 @@ This directory contains scripts for starting the Streamlit application. These sc
 
 ```bash
 # On Unix systems
-./unified_start_app.sh
+bash unified_start_app.sh
 
 # On Windows systems
 pwsh -ExecutionPolicy Bypass -File ".\start_app.ps1"
@@ -37,7 +37,7 @@ pwsh -ExecutionPolicy Bypass -File ".\start_app.ps1"
 
 ```bash
 # On Unix systems
-./scripts/streamlit/unified_start_app.sh
+bash scripts/streamlit/unified_start_app.sh
 
 # On Windows systems 
 pwsh -ExecutionPolicy Bypass -File ".\scripts\streamlit\start_app.ps1"

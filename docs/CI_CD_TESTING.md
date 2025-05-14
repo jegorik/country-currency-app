@@ -57,7 +57,7 @@ The project's CI/CD configuration is organized as follows:
 To run tests locally, you can use the consolidated test runner:
 
 ```bash
-./scripts/run_tests.sh
+bash /scripts/test/run_tests.sh
 ```
 
 And select option 3 for Python unit tests.

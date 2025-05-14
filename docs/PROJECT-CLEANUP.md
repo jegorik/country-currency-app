@@ -19,23 +19,24 @@ The project had multiple deployment scripts with overlapping functionality:
 
 #### After Cleanup:
 Deployment has been simplified to just two key files:
-- `unified_deploy.sh` - Single entry-point script that:
+- `/scripts/deploy/unified_deploy.sh` - Single entry-point script that:
   - Detects the operating system
   - Verifies dependencies
   - Executes appropriate commands for each platform
   - Provides clear error messages and guidance
-- `unified_deploy.ps1` - Enhanced Windows-specific script with:
+- `/scripts/deploy/unified_deploy.ps1` - Enhanced Windows-specific script with:
   - Modular functions for better organization
   - Improved error handling
   - Consistent output formatting
 
 ### 2. Removal of Redundant Scripts
 The following scripts have been deprecated and can be safely removed:
-- `deploy.sh` (replaced by unified_deploy.sh)
-- `deploy_linux.sh` (functionality incorporated into unified_deploy.sh)
-- `os_detect.sh` (functionality incorporated into unified_deploy.sh)
-- `check_dependencies.sh` (functionality incorporated into unified_deploy.sh)
-- `deploy_cross_platform.sh` (replaced by unified_deploy.sh)
+- `deploy.sh` (replaced by `/scripts/deploy/unified_deploy.sh`)
+- `deploy_linux.sh` (functionality incorporated into `/scripts/deploy/unified_deploy.sh`)
+- `os_detect.sh` (functionality incorporated into `/scripts/deploy/unified_deploy.sh`)
+- `check_dependencies.sh` (functionality incorporated into `/scripts/deploy/unified_deploy.sh`)
+- `deploy_cross_platform.sh` (replaced by `/scripts/deploy/unified_deploy.sh`)
+- Original Streamlit launcher scripts (now relocated to `/scripts/streamlit/` directory)
 
 ### 3. Benefits of the New Approach
 - **Reduced Duplication**: Code is now centralized instead of spread across multiple files
@@ -47,10 +48,27 @@ The following scripts have been deprecated and can be safely removed:
 ## Using the New Scripts
 Users now only need to remember a single command:
 ```bash
-bash scripts/unified_deploy.sh
+bash /scripts/deploy/unified_deploy.sh
 ```
 
 This script will automatically detect the operating system and execute the appropriate commands.
+
+## Script Reorganization
+
+The following scripts have been relocated to improve project organization:
+
+| Original Location                 | New Location                              |
+|-----------------------------------|-------------------------------------------|
+| `/streamlit/unified_start_app.sh` | `/scripts/streamlit/unified_start_app.sh` |
+| `/streamlit/wait_and_start.sh`    | `/scripts/streamlit/wait_and_start.sh`    |
+| `/streamlit/wait_and_start.ps1`   | `/scripts/streamlit/wait_and_start.ps1`   |
+| `/streamlit/start_app.ps1`        | `/scripts/streamlit/start_app.ps1`        |
+
+The `check_dependencies.sh` script functionality has been integrated into the unified deployment scripts and is available through:
+
+```bash
+bash /scripts/deploy/unified_deploy.sh --check-only
+```
 
 ## Future Improvements
 1. Further consolidate remaining utility scripts if possible

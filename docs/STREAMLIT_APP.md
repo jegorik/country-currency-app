@@ -17,10 +17,12 @@ The application follows a layered architecture:
 - Authentication integration with Databricks
 
 ## Setup and Installation
-See the `streamlit/README.md` file for setup instructions.
+- See the `streamlit/README.md` file for application component setup instructions.
+- See the `scripts/streamlit/README.md` file for launch script documentation.
 
 ## Usage
-1. Start the application with `streamlit run app.py`
+1. Start the application with `bash /scripts/streamlit/unified_start_app.sh`
+   (Note: Launch scripts have been relocated from `/streamlit` to `/scripts/streamlit/` directory)
 2. Authenticate with your Databricks credentials
 3. Interact with the country-currency data through the provided interface
 
