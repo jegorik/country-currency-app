@@ -12,17 +12,17 @@ RED='\033[0;31m'
 NC='\033[0m' # No Color
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
 # Files to check
 echo -e "${YELLOW}Checking script files for terraform path issues...${NC}"
 
 # List of files to check
 FILES_TO_CHECK=(
-  "$PROJECT_ROOT/scripts/setup.sh"
-  "$PROJECT_ROOT/scripts/validate_notebook.sh"
-  "$PROJECT_ROOT/scripts/test_databricks_connection.sh"
-  "$PROJECT_ROOT/scripts/run_tests.sh"
+  "$PROJECT_ROOT/scripts/setup/setup.sh"
+  "$PROJECT_ROOT/scripts/test/validate_notebook.sh"
+  "$PROJECT_ROOT/scripts/test/test_databricks_connection.sh"
+  "$PROJECT_ROOT/scripts/test/run_tests.sh"
   "$PROJECT_ROOT/.github/workflows/terraform-compliance.yml"
   "$PROJECT_ROOT/.github/workflows/ci-cd.yml"
   "$PROJECT_ROOT/.github/workflows/release.yml"

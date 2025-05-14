@@ -18,35 +18,35 @@ This document outlines the technical architecture of the Country Currency Applic
 │ - variables.tf       │       │ 2. terraform plan        │
 │ - provider.tf        │       │ 3. terraform apply       │
 │ - outputs.tf         │       │                          │
-└──────────┬───────────┘       └──────────────┬───────────┘
-           │                                  │
+└──────────┬───────────┘       └─────────────┬────────────┘
+           │                                 │
            └──────────────┬──────────────────┘
                           │
                           ▼
 ┌─────────────────────────────────────────────────────────┐
 │                 Databricks Workspace                    │
 │                                                         │
-│  ┌─────────────────┐      ┌───────────────────────┐    │
-│  │  Unity Catalog  │      │     SQL Warehouse     │    │
-│  │                 │      │                       │    │
-│  │  Catalog        │      │  Query Engine for     │    │
-│  │  └── Schema     │◄────►│  Data Processing      │    │
-│  │      └── Table  │      │                       │    │
-│  └────────┬────────┘      └───────────────────────┘    │
-│           │                                            │
-│  ┌────────▼────────┐      ┌───────────────────────┐    │
-│  │    Volume       │      │      Notebook         │    │
-│  │                 │      │                       │    │
-│  │  CSV Storage    │─────►│  Data Processing      │    │
-│  │                 │      │  Logic               │    │
-│  └─────────────────┘      └───────────────────────┘    │
-│                                      │                 │
-│                           ┌──────────▼─────────┐       │
-│                           │        Job         │       │
-│                           │                    │       │
-│                           │  Scheduled         │       │
-│                           │  Execution         │       │
-│                           └────────────────────┘       │
+│  ┌─────────────────┐      ┌───────────────────────┐     │
+│  │  Unity Catalog  │      │     SQL Warehouse     │     │
+│  │                 │      │                       │     │
+│  │  Catalog        │      │  Query Engine for     │     │
+│  │  └── Schema     │◄────►│  Data Processing      │     │
+│  │      └── Table  │      │                       │     │
+│  └────────┬────────┘      └───────────────────────┘     │
+│           │                                             │
+│  ┌────────▼────────┐      ┌───────────────────────┐     │
+│  │    Volume       │      │      Notebook         │     │
+│  │                 │      │                       │     │
+│  │  CSV Storage    │─────►│  Data Processing      │     │
+│  │                 │      │  Logic                │     │
+│  └─────────────────┘      └───────────────────────┘     │
+│                                      │                  │
+│                           ┌──────────▼─────────┐        │
+│                           │        Job         │        │
+│                           │                    │        │
+│                           │  Scheduled         │        │
+│                           │  Execution         │        │
+│                           └────────────────────┘        │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -116,7 +116,7 @@ The notebook runs in the context of:
 ### 1. Table Schema
 The country-currency mapping table includes the following columns:
 
-| Column Name      | Data Type | Description                        | Nullable | 
+| Column Name      | Data Type| Description                        | Nullable | 
 |------------------|----------|------------------------------------|----------|
 | country_code     | STRING   | ISO 3166-1 alpha-3 country code    | Yes      |
 | country_number   | INT      | ISO 3166-1 numeric country code    | Yes      |
@@ -124,7 +124,6 @@ The country-currency mapping table includes the following columns:
 | currency_name    | STRING   | Currency name                      | Yes      |
 | currency_code    | STRING   | ISO 4217 currency code             | Yes      |
 | currency_number  | INT      | ISO 4217 numeric currency code     | Yes      |
-| processing_time  | TIMESTAMP| Timestamp when the data was loaded | Yes      |
 
 ### 2. Schema Considerations
 * The `processing_time` column is automatically added by the notebook during data processing

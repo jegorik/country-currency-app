@@ -11,12 +11,13 @@ NC='\033[0m' # No Color
 
 # Read values from terraform.tfvars
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-TERRAFORM_DIR="$SCRIPT_DIR/../terraform"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+TERRAFORM_DIR="$PROJECT_ROOT/terraform"
 
 # Change to terraform directory
 echo -e "${YELLOW}Changing to terraform directory...${NC}"
 cd "$TERRAFORM_DIR" || {
-    echo -e "${RED}Error: Could not change to terraform directory${NC}"
+    echo -e "${RED}Error: Could not change to terraform directory at $TERRAFORM_DIR${NC}"
     exit 1
 }
 

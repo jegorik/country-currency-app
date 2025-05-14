@@ -28,12 +28,54 @@ country-currency-app/
 ├── data/                    # Data files
 │   └── csv_data/            # CSV data files
 │       └── country_code_to_currency_code.csv
-├── scripts/                 # Shell scripts for setup and testing
-│   ├── setup.sh             # Initial setup script 
-│   ├── configure_databricks_cli.sh # CLI configuration
-│   ├── test_databricks_connection.sh # Connection testing
-│   ├── validate_notebook.sh # Notebook validation
-│   └── run_tests.sh         # Consolidated test runner script
+├── streamlit/               # Streamlit web application
+│   ├── app.py               # Main Streamlit application
+│   ├── requirements.txt     # Python dependencies
+│   ├── README.md            # Streamlit app documentation
+│   ├── config/              # App configuration
+│   ├── models/              # Data models
+│   ├── operations/          # Business logic
+│   ├── ui/                  # User interface components
+│   └── utils/               # Utility functions
+├── scripts/                 # Utility scripts
+│   ├── deploy/              # Deployment scripts
+│   │   ├── deploy_windows.ps1      # Windows deployment
+│   │   ├── unified_deploy.ps1      # Unified Windows deployment
+│   │   └── unified_deploy.sh       # Unified Linux/macOS deployment
+│   │
+│   ├── setup/               # Setup scripts
+│   │   ├── setup.sh                # Initial setup script 
+│   │   └── configure_databricks_cli.sh # CLI configuration
+│   │
+│   ├── streamlit/           # Streamlit launch scripts
+│   │   ├── unified_start_app.sh    # Cross-platform Streamlit launcher
+│   │   ├── wait_and_start.sh       # Unix job wait and app start
+│   │   ├── wait_and_start.ps1      # Windows job wait and app start
+│   │   └── start_app.ps1           # Windows startup
+│   │
+│   ├── test/                # Testing scripts
+│   │   ├── run_tests.sh            # Consolidated test runner script
+│   │   ├── test_databricks_connection.sh # Connection testing
+│   │   └── validate_notebook.sh    # Notebook validation
+│   │
+│   └── utils/               # Utility scripts
+│       └── check_terraform_paths.sh # Script to validate terraform paths
+│   ├── deploy/              # Deployment scripts
+│   │   ├── deploy_windows.ps1      # Windows deployment
+│   │   ├── unified_deploy.ps1      # Unified Windows deployment
+│   │   └── unified_deploy.sh       # Unified Linux/macOS deployment
+│   │
+│   ├── setup/               # Setup scripts
+│   │   ├── setup.sh                # Initial setup script 
+│   │   └── configure_databricks_cli.sh # CLI configuration
+│   │
+│   ├── test/                # Testing scripts
+│   │   ├── run_tests.sh            # Consolidated test runner script
+│   │   ├── test_databricks_connection.sh # Connection testing
+│   │   └── validate_notebook.sh    # Notebook validation
+│   │
+│   └── utils/               # Utility scripts
+│       └── check_terraform_paths.sh # Script to validate terraform paths
 ├── docs/                    # Documentation
 │   ├── ARCHITECTURE.md
 │   ├── CONTRIBUTING.md
@@ -41,7 +83,7 @@ country-currency-app/
 │   ├── TROUBLESHOOTING.md
 │   ├── GITHUB_ACTIONS_TROUBLESHOOTING.md
 │   ├── CI_CD.md
-│   ├── VIEW_COMPLIANCE_RESULTS.md  # Guide for reading Terraform compliance results
+│   ├── STREAMLIT_APP.md     # Documentation for the Streamlit app
 │   └── Other documentation files
 ├── Makefile               # Automation for common tasks
 ├── setup.sh               # Initial setup script
@@ -67,6 +109,159 @@ country-currency-app/
 └── README.md                # Project documentation (this file)
 ```
 
+## Getting Started
+
+### Prerequisites
+- Terraform (version 1.11.4 or later)
+- Databricks account with appropriate permissions
+- PowerShell (for Windows) or Bash (for Linux/macOS)
+- Access to a Databricks workspace
+
+### Quick Start Deployment
+
+#### Simplified Cross-Platform Deployment
+Our new unified deployment script automatically detects your operating system and runs the appropriate commands:
+
+```bash
+# Run the unified deployment script (works on Windows, Linux, and macOS)
+bash scripts/unified_deploy.sh
+```
+
+This script will:
+1. Automatically detect your operating system
+2. Check for required dependencies
+3. Run the appropriate deployment process for your platform
+4. Set up all necessary Terraform resources
+
+For advanced users who prefer direct control:
+
+```powershell
+# Windows users can directly use the PowerShell script
+.\scripts\unified_deploy.ps1
+```
+
+## Cross-Platform Compatibility
+
+This project supports deployment on both Windows and Linux operating systems. The Terraform scripts are designed to work correctly on your specific platform.
+
+### Platform-Specific Dependencies
+
+#### Windows Requirements:
+- PowerShell Core (pwsh)
+- Terraform 1.11.4+
+- Databricks CLI
+- Python 3.x
+
+#### Linux/Unix Requirements:
+- Bash
+- curl
+- grep
+- sed
+- Terraform 1.11.4+
+- Databricks CLI
+- Python 3.x
+
+### Checking Dependencies
+
+Run the dependency checker script before deployment:
+
+```bash
+# Dependency checking is now integrated into the unified deployment scripts
+# Simply run the deployment script and dependencies will be verified automatically
+./scripts/deploy/unified_deploy.sh
+```
+
+This will verify that all required tools are installed on your system.
+
+## Deployment Instructions
+
+### Cross-Platform Deployment
+
+This project is designed to be OS-agnostic and can be deployed on both Windows and Linux/macOS. There are several ways to deploy the application:
+
+1. **Using the Makefile (Recommended)**:
+
+   ```bash
+   # Deploy using the OS-agnostic Makefile target
+   make deploy ENV=dev
+   ```
+
+   The Makefile automatically detects your operating system and runs the appropriate deployment script.
+
+2. **Using the unified deployment script**:
+
+   ```bash
+   # Run the unified deployment script (works on Windows, Linux, and macOS)
+   ./scripts/deploy/unified_deploy.sh
+   ```
+
+3. **Directly using OS-specific scripts**:
+
+   - On Linux/macOS:
+     ```bash
+     ./scripts/deploy/unified_deploy.sh
+     ```
+
+   - On Windows (PowerShell):
+     ```powershell
+     .\scripts\deploy\unified_deploy.ps1
+     ```
+
+### Requirements
+
+- **All Platforms**: Terraform 1.0+, Databricks CLI
+- **Linux/macOS**: Bash 4.0+, curl, grep, sed
+- **Windows**: PowerShell 5.0+
+
+### Environment Variables
+
+The following environment variables can be set to override defaults:
+
+- `DATABRICKS_HOST`: Databricks workspace URL
+- `DATABRICKS_TOKEN`: Personal access token for authentication
+
+## Streamlit Web Application
+
+The project includes a Streamlit web application that provides a user-friendly interface for managing the country-currency data. The app allows users to:
+
+- View all country-currency mappings in an interactive table
+- Add new country-currency mappings
+- Edit existing mappings
+- Delete mappings
+- Search and filter data
+
+### Running the Streamlit App
+
+After deploying the Databricks infrastructure, you can start the Streamlit app using one of the following methods:
+
+1. **Without waiting for job completion:**
+   ```bash
+   make streamlit-app
+   ```
+
+2. **Wait for the Databricks job to complete first:**
+   ```bash
+   make wait-and-start-ui
+   ```
+
+3. **Deploy infrastructure and start app in one command:**
+   ```bash
+   make deploy-and-wait
+   ```
+
+For more detailed information on running scripts from various locations, see the [Script Usage Guide](docs/SCRIPT_USAGE_GUIDE.md).
+
+### Streamlit App Architecture
+
+The Streamlit app is structured following a clean architecture pattern:
+
+- **UI Layer** - Streamlit components for user interaction
+- **Operations Layer** - Business logic for CRUD operations
+- **Data Access Layer** - Connection and queries to Databricks
+- **Configuration** - App settings and parameters
+
+For more details on the Streamlit application, see [STREAMLIT_APP.md](docs/STREAMLIT_APP.md).
+
 ## Project Documentation
 
 This project includes several documentation files to help users understand, use, and contribute to the project:
@@ -80,6 +275,7 @@ This project includes several documentation files to help users understand, use,
 - [Contributing Guidelines](docs/CONTRIBUTING.md) - How to contribute to this project
 - [Migration Guide](docs/MIGRATION.md) - Instructions for migrating between versions
 - [Troubleshooting](docs/TROUBLESHOOTING.md) - Common issues and solutions
+- [Streamlit App](docs/STREAMLIT_APP.md) - Documentation for the Streamlit application
 
 ## Troubleshooting
 

@@ -1,7 +1,7 @@
 # Makefile for Country Currency App
 # Helps run common CI/CD tasks locally
 
-.PHONY: init plan apply test validate compliance clean deploy-dev deploy-test deploy-prod
+.PHONY: init plan apply test validate compliance clean deploy-dev deploy-test deploy-prod streamlit-app install-streamlit
 
 # Variables
 ENV ?= dev
@@ -79,3 +79,44 @@ security-check:
 	@echo "Running security checks..."
 	@checkov -d . --framework terraform
 	@bandit -r notebooks/
+
+# Install Streamlit requirements
+install-streamlit:
+	@echo "Installing Streamlit app dependencies..."
+	@cd streamlit && pip install -r requirements.txt
+
+# Start the Streamlit application using unified launcher
+streamlit-app: install-streamlit
+	@echo "Starting Streamlit application using unified launcher..."
+	@bash scripts/streamlit/unified_start_app.sh
+
+# Using the relocated wait-and-start scripts
+wait-and-start-ui: install-streamlit
+	@echo "Waiting for job to complete and then starting Streamlit app..."
+ifeq ($(OS),Windows_NT)
+	@powershell -ExecutionPolicy Bypass -File scripts/streamlit/wait_and_start.ps1
+else
+	@bash scripts/streamlit/wait_and_start.sh
+endif
+
+# Full deployment with Streamlit app (without waiting)
+deploy-with-ui: deploy-dev streamlit-app
+
+# Full deployment with waiting for job completion
+deploy-and-wait: deploy-dev wait-and-start-ui
+# OS agnostic deployment target for Makefile
+# Simplified deployment using unified scripts
+
+# Detect OS and set appropriate execute command
+ifeq ($(OS),Windows_NT)
+	EXEC_CMD = powershell.exe -ExecutionPolicy Bypass -File
+	DEPLOY_SCRIPT = scripts\deploy\unified_deploy.ps1
+else
+	EXEC_CMD = bash
+	DEPLOY_SCRIPT = scripts/deploy/unified_deploy.sh
+endif
+
+# Deploy based on OS using unified deployment scripts
+deploy:
+	@echo "Deploying using unified deployment script..."
+	@$(EXEC_CMD) $(DEPLOY_SCRIPT)

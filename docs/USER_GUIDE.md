@@ -53,13 +53,13 @@ Data is loaded into Databricks using the `load_data_notebook_jupyter.ipynb` note
 
 #### Notebook Parameters
 
-| Parameter | Description | Example |
-|-----------|-------------|---------|
-| catalog_name | The Databricks catalog name | main |
-| schema_name | The schema for the table | country_currency |
-| table_name | The name of the table | country_code_to_currency_code |
-| csv_path | Path to the CSV file | /Volumes/country_currency_data/csv_data/country_code_to_currency_code.csv |
-| warehouse_id | SQL warehouse ID (optional) | 123456789abcdef |
+| Parameter    | Description                 | Example                                                                   |
+|--------------|-----------------------------|---------------------------------------------------------------------------|
+| catalog_name | The Databricks catalog name | main                                                                      |
+| schema_name  | The schema for the table    | country_currency                                                          |
+| table_name   | The name of the table       | country_code_to_currency_code                                             |
+| csv_path     | Path to the CSV file        | /Volumes/country_currency_data/csv_data/country_code_to_currency_code.csv |
+| warehouse_id | SQL warehouse ID (optional) | 123456789abcdef                                                           |
 
 ### Querying Data
 

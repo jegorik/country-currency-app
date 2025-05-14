@@ -4,14 +4,14 @@
 
 terraform {
   # Specify minimum Terraform version required
-  required_version = ">= 1.0.0"
+  required_version = "~>1.11"
 
   # Define required providers
   required_providers {
     # Databricks provider for managing Databricks resources
     databricks = {
       source  = "databricks/databricks"
-      version = "1.77" # Using the latest version (as of May 2025)
+      version = "~>1.77.0"
     }
   }
 

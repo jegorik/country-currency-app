@@ -9,6 +9,7 @@ This document provides solutions for common issues encountered when working with
 4. [Terraform Apply/Destroy Problems](#terraform-applydestroy-problems)
 5. [SQL Warehouse Connectivity](#sql-warehouse-connectivity)
 6. [Python Compatibility Issues](#python-compatibility-issues)
+7. [Cross-Platform Issues](#cross-platform-issues)
 
 ## Notebook Format Issues
 
@@ -120,3 +121,66 @@ Common causes include expired tokens, incorrect host URLs, or misconfigured perm
 - For detailed information and solutions, see [Python Compatibility Guide](PYTHON_COMPATIBILITY.md)
 - Use `-W ignore::DeprecationWarning` flag when running Python tests (implemented in `run_tests.sh`)
 - Consider pinning Python version to 3.11 until PySpark is updated
+
+## Cross-Platform Issues
+
+### Issue: Terraform Execution Fails on Unsupported OS
+
+**Symptoms:**
+- Job not triggering automatically after deployment
+- Error messages in Terraform logs about shell commands failing
+- `local-exec` provisioner failures with messages like "command not found"
+
+**Cause:**
+Shell script incompatibilities between Windows and Linux operating systems. Scripts may use commands or syntax that are specific to one platform.
+
+**Solution:**
+1. Dependencies are automatically checked by the unified deployment scripts:
+   ```bash
+   bash /scripts/deploy/unified_deploy.sh
+   ```
+
+2. Ensure you're running the latest version of the code that includes OS detection in scripts
+
+3. For Windows users:
+   - Make sure PowerShell Core (pwsh) is installed, not just Windows PowerShell
+   - Add PowerShell Core to your PATH
+   - Run Terraform from Git Bash or WSL for better compatibility
+
+4. For Linux users:
+   - Ensure curl, grep, and sed are installed
+   - Make all scripts executable: `chmod +x scripts/*.sh`
+
+### Issue: PowerShell Security Restrictions
+
+**Symptoms:**
+- Scripts fail with execution policy errors
+- PowerShell refuses to run scripts
+
+**Solution:**
+1. Run PowerShell as administrator
+2. Set execution policy to allow scripts:
+   ```powershell
+   Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+   ```
+3. If using pwsh for the first time, confirm you want to run scripts
+
+### Issue: Missing Dependencies on Linux
+
+**Symptoms:**
+- Commands like `curl` not found
+- Script failures on fresh Linux installations
+
+**Solution:**
+Install required dependencies:
+```bash
+# On Debian/Ubuntu
+sudo apt-get update
+sudo apt-get install -y curl jq grep sed
+
+# On Red Hat/CentOS
+sudo yum install -y curl jq grep sed
+
+# On macOS (using Homebrew)
+brew install curl jq grep
+```

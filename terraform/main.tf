@@ -13,23 +13,50 @@ data "databricks_sql_warehouse" "existing_warehouse" {
   id    = var.databricks_warehouse_id
 }
 
-# Ensure the SQL warehouse is running before proceeding with data operations
-# Use count to conditionally create this resource based on skip_validation
-resource "null_resource" "start_warehouse" {
-  count = var.skip_validation ? 0 : 1
+# Windows specific resource for SQL warehouse start
+resource "null_resource" "start_warehouse_windows" {
+  count = (!var.skip_validation && local.is_windows) ? 1 : 0
 
   provisioner "local-exec" {
-    command = <<-EOT
-      echo "Starting SQL warehouse ${var.databricks_warehouse_id}..."
-      curl -s -X POST "${var.databricks_host}/api/2.0/sql/warehouses/${var.databricks_warehouse_id}/start" \
-        -H "Authorization: Bearer ${var.databricks_token}" \
-        -H "Content-Type: application/json"
+    interpreter = ["powershell", "-Command"]
+    command     = <<-EOT
+      Write-Host "Starting SQL warehouse ${var.databricks_warehouse_id}..."
       
-      # Check result
-      if [ $? -eq 0 ]; then
+      $Headers = @{
+        "Authorization" = "Bearer ${var.databricks_token}"
+        "Content-Type" = "application/json" 
+      }
+      
+      try {
+        $Response = Invoke-RestMethod -Uri "${var.databricks_host}/api/2.0/sql/warehouses/${var.databricks_warehouse_id}/start" -Method Post -Headers $Headers
+        Write-Host "SQL warehouse start request successful"
+      }
+      catch {
+        Write-Host "Failed to start SQL warehouse. Error: $_"
+        exit 1
+      }
+    EOT
+  }
+}
+
+# Linux/Unix specific resource for SQL warehouse start
+resource "null_resource" "start_warehouse_linux" {
+  count = (!var.skip_validation && !local.is_windows) ? 1 : 0
+
+  provisioner "local-exec" {
+    interpreter = ["/bin/bash", "-c"]
+    command     = <<-EOT
+      echo "Starting SQL warehouse ${var.databricks_warehouse_id}..."
+      
+      status_code=$(curl -s -o /dev/null -w "%%{http_code}" \
+        -X POST "${var.databricks_host}/api/2.0/sql/warehouses/${var.databricks_warehouse_id}/start" \
+        -H "Authorization: Bearer ${var.databricks_token}" \
+        -H "Content-Type: application/json")
+        
+      if [ $status_code -eq 200 ] || [ $status_code -eq 202 ]; then
         echo "SQL warehouse start request successful"
       else
-        echo "Failed to start SQL warehouse"
+        echo "Failed to start SQL warehouse. HTTP Status: $status_code"
         exit 1
       fi
     EOT
@@ -117,14 +144,12 @@ resource "databricks_sql_table" "table" {
     comment  = "ISO 4217 numeric currency code"
     nullable = false
   }
-  column {
-    name     = "processing_time"
-    type     = "TIMESTAMP"
-    comment  = "Timestamp when the data was processed"
-    nullable = false
-  }
 
-  depends_on = [databricks_schema.schema, null_resource.start_warehouse]
+  depends_on = [
+    databricks_schema.schema, 
+    null_resource.start_warehouse_windows,
+    null_resource.start_warehouse_linux
+  ]
 }
 
 #----------------------------------------------
@@ -189,39 +214,88 @@ resource "databricks_job" "load_data_job" {
     databricks_sql_table.table,
     databricks_file.csv_data,
     databricks_notebook.load_data_notebook,
-    null_resource.start_warehouse
+    null_resource.start_warehouse_windows,
+    null_resource.start_warehouse_linux
   ]
+}
+
+# Save the job ID to a file for reference
+resource "local_file" "job_id_file" {
+  content  = databricks_job.load_data_job.id
+  filename = "${path.module}/job_id.txt"
 }
 
 #----------------------------------------------
 # Job Execution: Initial Data Load Trigger
 #----------------------------------------------
 
-# Automatically trigger the job to load data after all resources are created
-resource "null_resource" "trigger_job" {
-  # Only run this when not in skip_validation mode (like in CI/CD testing)
-  count = var.skip_validation ? 0 : 1
+# Windows specific resource for job trigger
+resource "null_resource" "trigger_job_windows" {
+  count = (!var.skip_validation && local.is_windows) ? 1 : 0
 
   provisioner "local-exec" {
-    command = <<-EOT
+    interpreter = ["powershell", "-Command"]
+    command     = <<-EOT
+      Write-Host "Waiting 5 seconds before triggering job..."
+      Start-Sleep -Seconds 5
+      Write-Host "Triggering job ${databricks_job.load_data_job.id} to load country-currency data..."
+      
+      $Headers = @{
+        "Authorization" = "Bearer ${var.databricks_token}"
+        "Content-Type" = "application/json"
+      }
+      
+      $Body = @{
+        "job_id" = ${databricks_job.load_data_job.id}
+      } | ConvertTo-Json
+      
+      try {
+        $Response = Invoke-RestMethod -Uri "${var.databricks_host}/api/2.1/jobs/run-now" -Method Post -Headers $Headers -Body $Body
+        $RunId = $Response.run_id
+        Write-Host "Job triggered successfully! Run ID: $RunId"
+        Write-Host "Check job status at: ${var.databricks_host}/#job/${databricks_job.load_data_job.id}/run/$RunId"
+      }
+      catch {
+        Write-Host "Failed to trigger job. Error: $_"
+        exit 1
+      }
+    EOT
+  }
+
+  depends_on = [
+    databricks_job.load_data_job
+  ]
+}
+
+# Linux/Unix specific resource for job trigger
+resource "null_resource" "trigger_job_linux" {
+  count = (!var.skip_validation && !local.is_windows) ? 1 : 0
+
+  provisioner "local-exec" {
+    interpreter = ["/bin/bash", "-c"]
+    command     = <<-EOT
+      echo "Waiting 5 seconds before triggering job..."
+      sleep 5
       echo "Triggering job ${databricks_job.load_data_job.id} to load country-currency data..."
-      response=$(curl -s -w "\n%%{http_code}" -X POST "${var.databricks_host}/api/2.1/jobs/run-now" \
+      
+      # Create JSON payload
+      payload="{\"job_id\": ${databricks_job.load_data_job.id}}"
+      
+      # Make API call using curl
+      response=$(curl -s \
+        -X POST "${var.databricks_host}/api/2.1/jobs/run-now" \
         -H "Authorization: Bearer ${var.databricks_token}" \
         -H "Content-Type: application/json" \
-        -d '{
-          "job_id": ${databricks_job.load_data_job.id}
-        }')
+        -d "$payload")
+        
+      # Extract run_id using grep and cut (basic JSON parsing)
+      run_id=$(echo $response | grep -o '"run_id":[0-9]*' | cut -d':' -f2)
       
-      status_code=$(echo "$response" | tail -n1)
-      response_body=$(echo "$response" | sed '$d')
-      
-      if [ $status_code -eq 200 ]; then
-        run_id=$(echo $response_body | grep -o '"run_id":[0-9]*' | cut -d':' -f2)
+      if [ -n "$run_id" ]; then
         echo "Job triggered successfully! Run ID: $run_id"
         echo "Check job status at: ${var.databricks_host}/#job/${databricks_job.load_data_job.id}/run/$run_id"
       else
-        echo "Failed to trigger job. Status code: $status_code"
-        echo "Response: $response_body"
+        echo "Failed to trigger job. Response: $response"
         exit 1
       fi
     EOT

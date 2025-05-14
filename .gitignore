@@ -137,3 +137,27 @@ fabric.properties
 
 # Android studio 3.1+ serialized cache file
 .idea/caches/build_file_checksums.ser
+
+# Ignore job ID file
+job_id.txt
+
+# Python specific
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Jupyter notebook checkpoints
+.ipynb_checkpoints/
+
+# Coverage reports
+.coverage
+htmlcov/
+
+# MacOS
+.DS_Store
+
+# Logs
+logs/
+*.log
+activity_log.md
