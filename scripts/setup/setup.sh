@@ -41,8 +41,12 @@ fi
 echo ""
 echo -e "${YELLOW}Checking configuration files...${NC}"
 
+# Get script directory and project root
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+
 # Check terraform.tfvars
-if [ ! -f "../terraform/terraform.tfvars" ]; then
+if [ ! -f "${PROJECT_ROOT}/terraform/terraform.tfvars" ]; then
     echo -e "${RED}[ERROR] terraform.tfvars file not found!${NC}"
     echo "Please copy terraform.tfvars.example to terraform.tfvars and fill in your values."
     exit 1
@@ -50,7 +54,7 @@ else
     echo -e "${GREEN}✓ terraform.tfvars exists${NC}"
     
     # Basic validation of terraform.tfvars
-    if ! grep -q "databricks_host" ../terraform/terraform.tfvars || ! grep -q "databricks_token" ../terraform/terraform.tfvars; then
+    if ! grep -q "databricks_host" "${PROJECT_ROOT}/terraform/terraform.tfvars" || ! grep -q "databricks_token" "${PROJECT_ROOT}/terraform/terraform.tfvars"; then
         echo -e "${RED}[ERROR] terraform.tfvars is missing required variables.${NC}"
         echo "Please make sure databricks_host and databricks_token are defined."
         exit 1
@@ -60,9 +64,7 @@ fi
 echo ""
 echo -e "${YELLOW}Initializing Terraform...${NC}"
 
-# Change to the terraform directory
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+# Already defined SCRIPT_DIR and PROJECT_ROOT above
 cd "$PROJECT_ROOT/terraform" || {
     echo -e "${RED}[ERROR] Cannot find terraform directory at $PROJECT_ROOT/terraform!${NC}"
     exit 1
