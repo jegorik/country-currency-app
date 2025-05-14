@@ -84,13 +84,19 @@ jobs:
           # Get commits since last tag
           LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
           
+          # Create changelog file first
           if [[ -z "$LAST_TAG" ]]; then
             # First release - use all commits
-            echo "CHANGELOG=$(git log --pretty=format:"* %s (%h)" --no-merges)" >> $GITHUB_ENV
+            git log --pretty=format:'* %s (%h)' --no-merges > changelog.txt
           else
             # Get commits since last tag
-            echo "CHANGELOG=$(git log ${LAST_TAG}..HEAD --pretty=format:"* %s (%h)" --no-merges)" >> $GITHUB_ENV
+            git log ${LAST_TAG}..HEAD --pretty=format:'* %s (%h)' --no-merges > changelog.txt
           fi
+          
+          # Use GitHub's proper multiline environment variable syntax
+          echo 'CHANGELOG<<EOF' >> $GITHUB_ENV
+          cat changelog.txt >> $GITHUB_ENV
+          echo 'EOF' >> $GITHUB_ENV
       
       - name: Create GitHub Release
         id: create_release
