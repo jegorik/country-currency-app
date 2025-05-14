@@ -33,7 +33,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 from utils.databricks_client import DatabricksClient
 from operations.data_operations import DataOperations
 from ui.sidebar import render_sidebar
-from ui.main_view_new import render_main_view
+from ui.main_view import render_main_view
 from ui.crud_views import render_crud_views
 from config.app_config import AppConfig
 from utils.status_checker import check_databricks_job_status
