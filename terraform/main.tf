@@ -109,34 +109,40 @@ resource "databricks_sql_table" "table" {
 
   # Column definitions based on CSV structure
   column {
-    name    = "country_code"
-    type    = "STRING"
-    comment = "ISO 3166-1 alpha-3 country code"
+    name     = "country_code"
+    type     = "STRING"
+    comment  = "ISO 3166-1 alpha-3 country code"
+    nullable = false
   }
   column {
-    name    = "country_number"
-    type    = "INT"
-    comment = "ISO 3166-1 numeric country code"
+    name     = "country_number"
+    type     = "INT"
+    comment  = "ISO 3166-1 numeric country code"
+    nullable = false
   }
   column {
-    name    = "country"
-    type    = "STRING"
-    comment = "Country name"
+    name     = "country"
+    type     = "STRING"
+    comment  = "Country name"
+    nullable = false
   }
   column {
-    name    = "currency_name"
-    type    = "STRING"
-    comment = "Currency name"
+    name     = "currency_name"
+    type     = "STRING"
+    comment  = "Currency name"
+    nullable = false
   }
   column {
-    name    = "currency_code"
-    type    = "STRING"
-    comment = "ISO 4217 currency code"
+    name     = "currency_code"
+    type     = "STRING"
+    comment  = "ISO 4217 currency code"
+    nullable = false
   }
   column {
-    name    = "currency_number"
-    type    = "INT"
-    comment = "ISO 4217 numeric currency code"
+    name     = "currency_number"
+    type     = "INT"
+    comment  = "ISO 4217 numeric currency code"
+    nullable = false
   }
 
   depends_on = [

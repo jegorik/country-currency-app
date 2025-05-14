@@ -43,12 +43,27 @@ The CI/CD pipeline automates the process of testing, building, and deploying the
 
 ## GitHub Actions Workflow
 
-The GitHub Actions workflow is defined in `.github/workflows/ci-cd.yml` and consists of the following jobs:
+The project uses multiple GitHub Actions workflows:
+
+### Main CI/CD Pipeline
+
+The main CI/CD pipeline is defined in `.github/workflows/ci-cd.yml` and consists of the following jobs:
 
 1. **Validate**:
    - Checks code syntax and style
    - Validates Terraform configurations
    - Ensures code meets quality standards
+
+### Terraform Compliance Workflow
+
+A separate workflow for infrastructure policy checking is defined in `.github/workflows/terraform-compliance.yml`. This workflow:
+
+- Runs on pull requests that modify Terraform files
+- Uses a custom mock plan generator to avoid provider authentication issues
+- Validates infrastructure against policy rules defined in `compliance/` directory
+- Posts results to pull requests when issues are found
+
+For detailed information about the terraform-compliance workflow, see [TERRAFORM_COMPLIANCE.md](./TERRAFORM_COMPLIANCE.md).
 
 2. **Test**:
    - Runs automated tests on the codebase

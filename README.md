@@ -81,6 +81,7 @@ country-currency-app/
 │   ├── CONTRIBUTING.md
 │   ├── MIGRATION.md
 │   ├── TROUBLESHOOTING.md
+│   ├── GITHUB_ACTIONS_TROUBLESHOOTING.md
 │   ├── CI_CD.md
 │   ├── STREAMLIT_APP.md     # Documentation for the Streamlit app
 │   └── Other documentation files
@@ -270,6 +271,7 @@ This project includes several documentation files to help users understand, use,
 - [Component Diagram](docs/COMPONENT_DIAGRAM.md) - Visual representation of system components
 - [Notebook Validation](docs/NOTEBOOK_VALIDATION.md) - How notebook validation works in CI/CD
 - [CI/CD Process](docs/CI_CD.md) - CI/CD pipeline documentation
+- [Terraform Compliance](docs/TERRAFORM_COMPLIANCE.md) - Policy-as-code testing for infrastructure
 - [Contributing Guidelines](docs/CONTRIBUTING.md) - How to contribute to this project
 - [Migration Guide](docs/MIGRATION.md) - Instructions for migrating between versions
 - [Troubleshooting](docs/TROUBLESHOOTING.md) - Common issues and solutions
@@ -277,13 +279,15 @@ This project includes several documentation files to help users understand, use,
 
 ## Troubleshooting
 
-For common issues and their solutions, please refer to the [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) document. Common issues include:
+For common issues and their solutions, please refer to the [TROUBLESHOOTING.md](./docs/TROUBLESHOOTING.md) document. Common issues include:
 
 1. **Notebook Format Issues** - Problems with notebook execution format in Databricks
 2. **Table Schema Conflicts** - Issues with table schema discrepancies between Terraform and Databricks
 3. **Authentication Issues** - Problems with Databricks API tokens and authentication
 4. **Terraform Apply/Destroy Problems** - Common Terraform operational issues
 5. **SQL Warehouse Connectivity** - Issues connecting to SQL warehouses
+
+For specific GitHub Actions CI/CD issues, see [GITHUB_ACTIONS_TROUBLESHOOTING.md](./docs/GITHUB_ACTIONS_TROUBLESHOOTING.md).
 
 ## Prerequisites
 - Terraform v1.0.0+
@@ -373,6 +377,8 @@ This project uses GitHub Actions to automate testing, building, and deployment p
 For complete details on the CI/CD implementation, see:
 - [CI_CD.md](docs/CI_CD.md) - General CI/CD configuration
 - [CI_CD_TESTING.md](docs/CI_CD_TESTING.md) - CI/CD testing configuration and troubleshooting
+- [VIEW_COMPLIANCE_RESULTS.md](docs/VIEW_COMPLIANCE_RESULTS.md) - How to view Terraform compliance check results
+- [TERRAFORM_COMPLIANCE.md](docs/TERRAFORM_COMPLIANCE.md) - Information about Terraform compliance checks
 
 ## Contributing
 Please follow the standard Git workflow:
