@@ -140,3 +140,23 @@ fabric.properties
 
 # Ignore job ID file
 job_id.txt
+
+# Python specific
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Jupyter notebook checkpoints
+.ipynb_checkpoints/
+
+# Coverage reports
+.coverage
+htmlcov/
+
+# MacOS
+.DS_Store
+
+# Logs
+logs/
+*.log

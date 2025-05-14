@@ -81,9 +81,15 @@ def render_data_explorer():
                 st.session_state.current_page = 1  # Reset to first page
         
         with col2:
-            st.write("")  # Add some space
-            st.write("")  # Add some space
-            if st.button("🔄 Refresh"):
+            # Create a container for the button with precise positioning
+            container = st.container()
+            # Add vertical space to push the button down (42px is approximately the height of the label + some margin)
+            container.markdown('<div style="height: 42px;"></div>', unsafe_allow_html=True)
+            # Now add the button in the container
+            if container.button("🔄 Refresh"):
+                # Use our centralized refresh function
+                from utils.app_utils import refresh_data
+                refresh_data(reset_page=True, show_message=True)
                 st.rerun()
         
         # Advanced filtering

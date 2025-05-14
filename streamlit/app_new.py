@@ -57,7 +57,7 @@ from ui.crud_views import render_crud_views
 from config.app_config import AppConfig
 from utils.status_checker import check_databricks_job_status
 from templates.html_components import app_header, footer
-from app_utils import refresh_data
+from utils.app_utils import refresh_data
 
 # Set page configuration
 st.set_page_config(
@@ -68,7 +68,7 @@ st.set_page_config(
 )
 
 # Load custom CSS
-css_path = os.path.join(os.path.dirname(__file__), "ui", "style.css")
+css_path = os.path.join(os.path.dirname(__file__), "ui", "styles", "style.css")
 with open(css_path, 'r') as f:
     st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
 

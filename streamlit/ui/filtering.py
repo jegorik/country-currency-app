@@ -49,7 +49,7 @@ def render_filtering_controls():
     with col3:
         if st.button("🔄 Refresh"):
             # Force refresh by clearing caches using the central function
-            from app_utils import refresh_data
+            from utils.app_utils import refresh_data
             refresh_data(reset_page=True, show_message=True)
             st.rerun()
     

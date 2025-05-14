@@ -43,11 +43,22 @@ country-currency-app/
 │   ├── ui/                  # User interface components
 │   └── utils/               # Utility functions
 ├── scripts/                 # Shell scripts for setup and testing
-│   ├── setup.sh             # Initial setup script 
-│   ├── configure_databricks_cli.sh # CLI configuration
-│   ├── test_databricks_connection.sh # Connection testing
-│   ├── validate_notebook.sh # Notebook validation
-│   └── run_tests.sh         # Consolidated test runner script
+│   ├── deploy/              # Deployment scripts
+│   │   ├── deploy_windows.ps1      # Windows deployment
+│   │   ├── unified_deploy.ps1      # Unified Windows deployment
+│   │   └── unified_deploy.sh       # Unified Linux/macOS deployment
+│   │
+│   ├── setup/               # Setup scripts
+│   │   ├── setup.sh                # Initial setup script 
+│   │   └── configure_databricks_cli.sh # CLI configuration
+│   │
+│   ├── test/                # Testing scripts
+│   │   ├── run_tests.sh            # Consolidated test runner script
+│   │   ├── test_databricks_connection.sh # Connection testing
+│   │   └── validate_notebook.sh    # Notebook validation
+│   │
+│   └── utils/               # Utility scripts
+│       └── check_terraform_paths.sh # Script to validate terraform paths
 ├── docs/                    # Documentation
 │   ├── ARCHITECTURE.md
 │   ├── CONTRIBUTING.md

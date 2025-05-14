@@ -14,7 +14,7 @@ This directory contains the Streamlit web application for the Country Currency A
 ```
 streamlit/
 │
-├── app.py              # Main application file
+├── app_new.py          # Main application file
 ├── config/             # Configuration files
 │   └── app_config.py   # Application configuration
 │
@@ -24,11 +24,32 @@ streamlit/
 ├── operations/         # Business logic and data operations
 │   └── data_operations.py
 │
+├── startup/            # Application startup scripts
+│   ├── start_app.ps1        # Windows startup script
+│   ├── unified_start_app.sh # Cross-platform startup script
+│   ├── wait_and_start.ps1   # Windows startup with dependency waiting
+│   └── wait_and_start.sh    # Unix startup with dependency waiting
+│
+├── templates/          # HTML and UI templates
+│   └── html_components.py
+│
 ├── ui/                 # User interface components
-│   ├── crud_views.py   # Create, Read, Update, Delete views
-│   ├── main_view.py    # Main data table view
-│   ├── sidebar.py      # Application sidebar
-│   └── style.css       # Custom styling
+│   ├── crud_operations.py   # CRUD operation logic
+│   ├── crud_views.py        # Create, Read, Update, Delete views
+│   ├── data_display.py      # Data presentation components
+│   ├── filtering.py         # Search and filtering functionality
+│   ├── main_view.py         # Main data table view
+│   ├── sidebar.py           # Application sidebar
+│   ├── visualizations.py    # Data visualization components
+│   └── styles/              # CSS styling directory
+│       └── style.css        # Custom styling
+│
+├── utils/              # Utility functions and helpers
+│   ├── app_utils.py        # Application utilities
+│   ├── databricks_client.py # Databricks connectivity
+│   ├── logger.py           # Logging utilities
+│   ├── status_checker.py   # Job status checking
+│   └── utils.py            # General utilities
 │
 └── utils/              # Utility functions
     ├── databricks_client.py  # Databricks API client

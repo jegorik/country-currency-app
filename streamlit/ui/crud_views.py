@@ -91,7 +91,7 @@ def _render_add_view():
                 time_placeholder.text("Redirecting to home view in 3 seconds...")
                 time.sleep(3)
                 # Обновляем данные через специальную функцию
-                from app_utils import refresh_data
+                from utils.app_utils import refresh_data
                 refresh_data()
                 st.session_state.current_view = "home"
                 st.rerun()
@@ -194,7 +194,7 @@ def _render_edit_view():
                         time_placeholder.text("Redirecting to home view in 3 seconds...")
                         time.sleep(3)
                         # Обновляем данные через специальную функцию
-                        from app_utils import refresh_data
+                        from utils.app_utils import refresh_data
                         refresh_data()
                         st.session_state.current_view = "home"
                         st.session_state.edit_record_id = None
@@ -263,7 +263,7 @@ def _render_delete_view():
                     time_placeholder.text("Redirecting to home view in 3 seconds...")
                     time.sleep(3)
                     # Обновляем данные через специальную функцию
-                    from app_utils import refresh_data
+                    from utils.app_utils import refresh_data
                     refresh_data()
                     st.session_state.current_view = "home"
                     st.session_state.delete_record_id = None
