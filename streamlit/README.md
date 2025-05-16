@@ -14,7 +14,7 @@ This directory contains the Streamlit web application for the Country Currency A
 ```
 streamlit/
 │
-├── app_new.py          # Main application file
+├── app.py              # Main application file
 ├── config/             # Configuration files
 │   └── app_config.py   # Application configuration
 │
@@ -24,36 +24,25 @@ streamlit/
 ├── operations/         # Business logic and data operations
 │   └── data_operations.py
 │
-├── startup/            # Application startup scripts
-│   ├── start_app.ps1        # Windows startup script
-│   ├── unified_start_app.sh # Cross-platform startup script
-│   ├── wait_and_start.ps1   # Windows startup with dependency waiting
-│   └── wait_and_start.sh    # Unix startup with dependency waiting
-│
 ├── templates/          # HTML and UI templates
 │   └── html_components.py
 │
 ├── ui/                 # User interface components
-│   ├── crud_operations.py   # CRUD operation logic
+│   ├── batch_upload.py      # Batch upload functionality
 │   ├── crud_views.py        # Create, Read, Update, Delete views
-│   ├── data_display.py      # Data presentation components
-│   ├── filtering.py         # Search and filtering functionality
 │   ├── main_view.py         # Main data table view
 │   ├── sidebar.py           # Application sidebar
 │   ├── visualizations.py    # Data visualization components
 │   └── styles/              # CSS styling directory
 │       └── style.css        # Custom styling
 │
-├── utils/              # Utility functions and helpers
-│   ├── app_utils.py        # Application utilities
-│   ├── databricks_client.py # Databricks connectivity
-│   ├── logger.py           # Logging utilities
-│   ├── status_checker.py   # Job status checking
-│   └── utils.py            # General utilities
-│
-└── utils/              # Utility functions
-    ├── databricks_client.py  # Databricks API client
-    └── status_checker.py     # Job status checker
+└── utils/              # Utility functions and helpers
+    ├── app_utils.py         # Application utilities
+    ├── databricks_client.py # Databricks connectivity
+    ├── logger.py            # Logging utilities
+    └── status_checker.py    # Job status checking
+
+Note: All startup scripts have been relocated to /scripts/streamlit/ directory
 ```
 
 ## Prerequisites
@@ -61,6 +50,15 @@ streamlit/
 - Python 3.8 or higher
 - Databricks workspace with the country-currency table deployed
 - Databricks personal access token with appropriate permissions
+- Python packages (installed via requirements.txt):
+  - streamlit>=1.30.0
+  - pandas>=2.0.0
+  - databricks-connect>=14.0.0
+  - databricks-sql-connector>=3.0.0
+  - databricks-sdk>=0.20.0
+  - PyArrow>=15.0.0
+  - plotly>=6.0.1
+  - xlsxwriter>=3.0.0 (required for Excel export functionality)
 
 ## Installation
 
@@ -80,8 +78,16 @@ pip install -r requirements.txt
 Run the Streamlit application:
 
 ```bash
+# Direct method
 cd streamlit
 streamlit run app.py
+```
+
+Or use the launcher scripts (recommended):
+
+```bash
+# From project root
+bash scripts/streamlit/unified_start_app.sh
 ```
 
 The application will be available at http://localhost:8501.
@@ -96,21 +102,19 @@ This Streamlit application is designed to work on both Windows and Linux/macOS e
 
    ```bash
    # Automatically detects your OS and runs the appropriate script
-   ./start_app_cross_platform.sh
+   bash scripts/streamlit/unified_start_app.sh
    ```
 
 2. **Platform-specific launchers**:
 
    - On Linux/macOS:
      ```bash
-     ./start_app_new.sh
-     # or for legacy UI
-     ./start_app.sh
+     bash scripts/streamlit/wait_and_start.sh
      ```
 
    - On Windows:
      ```powershell
-     .\start_app.ps1
+     .\scripts\streamlit\start_app.ps1
      ```
 
 ### Platform-Specific Notes:

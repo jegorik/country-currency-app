@@ -74,10 +74,15 @@ if st.session_state.current_view == "home":
 elif st.session_state.current_view in ["add", "edit", "delete"]:
     render_crud_views()
 elif st.session_state.current_view == "batch_upload":
-    st.error("Batch upload functionality is not yet implemented")
-    if st.button("Back to Home"):
-        st.session_state.current_view = "home"
-        st.rerun()
+    try:
+        from ui.batch_upload import render_batch_upload_view
+        render_batch_upload_view()
+    except Exception as e:
+        st.error(f"Error loading batch upload view: {str(e)}")
+        logger.error(f"Error loading batch upload view: {str(e)}", exc_info=True)
+        if st.button("Back to Home"):
+            st.session_state.current_view = "home"
+            st.rerun()
 elif st.session_state.current_view == "analytics":
     try:
         from ui.visualizations import render_visualizations

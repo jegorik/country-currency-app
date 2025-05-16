@@ -60,22 +60,6 @@ country-currency-app/
 │   │
 │   └── utils/               # Utility scripts
 │       └── check_terraform_paths.sh # Script to validate terraform paths
-│   ├── deploy/              # Deployment scripts
-│   │   ├── deploy_windows.ps1      # Windows deployment
-│   │   ├── unified_deploy.ps1      # Unified Windows deployment
-│   │   └── unified_deploy.sh       # Unified Linux/macOS deployment
-│   │
-│   ├── setup/               # Setup scripts
-│   │   ├── setup.sh                # Initial setup script 
-│   │   └── configure_databricks_cli.sh # CLI configuration
-│   │
-│   ├── test/                # Testing scripts
-│   │   ├── run_tests.sh            # Consolidated test runner script
-│   │   ├── test_databricks_connection.sh # Connection testing
-│   │   └── validate_notebook.sh    # Notebook validation
-│   │
-│   └── utils/               # Utility scripts
-│       └── check_terraform_paths.sh # Script to validate terraform paths
 ├── docs/                    # Documentation
 │   ├── ARCHITECTURE.md
 │   ├── CONTRIBUTING.md
@@ -163,15 +147,18 @@ This project supports deployment on both Windows and Linux operating systems. Th
 
 ### Checking Dependencies
 
-Run the dependency checker script before deployment:
+Dependency checking is now integrated into the unified deployment scripts:
 
 ```bash
-# Dependency checking is now integrated into the unified deployment scripts
-# Simply run the deployment script and dependencies will be verified automatically
-./scripts/deploy/unified_deploy.sh
+# Run with the --check-only flag to verify dependencies without deployment
+bash /scripts/deploy/unified_deploy.sh --check-only
 ```
 
-This will verify that all required tools are installed on your system.
+This will verify that all required tools are installed on your system, including:
+- Terraform
+- Databricks CLI
+- Python with required packages
+- Platform-specific dependencies
 
 ## Deployment Instructions
 
@@ -302,24 +289,24 @@ For specific GitHub Actions CI/CD issues, see [GITHUB_ACTIONS_TROUBLESHOOTING.md
    ```bash
    ./scripts/setup.sh
    ```
-   
+
 3. Or use the Makefile for common operations:
    ```bash
    # Initialize Terraform
    make init
-   
+
    # Plan changes for development environment
    make ENV=dev plan
-   
+
    # Apply changes
    make ENV=dev apply
    ```
-   
+
 4. Run tests with the consolidated test script:
    ```bash
    ./scripts/run_tests.sh
    ```
-   
+
    This script offers options for:
    - Testing Databricks connection
    - Validating notebooks
@@ -331,7 +318,7 @@ For specific GitHub Actions CI/CD issues, see [GITHUB_ACTIONS_TROUBLESHOOTING.md
    - `DATABRICKS_HOST`: Your Databricks workspace URL
    - `DATABRICKS_TOKEN`: Your Databricks API token
    - `DATABRICKS_WAREHOUSE_ID`: ID of your SQL warehouse
-   
+
 3. The CI/CD pipeline will automatically run on pull requests and pushes to main branches
 4. To manually trigger a deployment:
    - Go to the "Actions" tab in GitHub

@@ -219,7 +219,6 @@ def _render_edit_view():
                     updated_record.country_code = st.session_state.edit_record_id
 
                     # Log record information for debugging
-                    import logging
                     logger = logging.getLogger(__name__)
                     logger.debug(f"Updating record: {updated_record.country_code}, {updated_record.country}, {updated_record.currency_code}")
 
