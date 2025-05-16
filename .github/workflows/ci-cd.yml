@@ -212,6 +212,7 @@ jobs:
           volume_name             = "country_currency_data"
           databricks_warehouse_id = "${{ secrets.DATABRICKS_WAREHOUSE_ID }}"
           skip_validation         = true
+          create_schema           = false
           EOF
 
       - name: Terraform Init
@@ -274,6 +275,7 @@ jobs:
           volume_name             = "country_currency_data"
           databricks_warehouse_id = "${{ secrets.DATABRICKS_WAREHOUSE_ID }}"
           skip_validation         = false
+          create_schema           = false
           EOF
 
       - name: Terraform Init
@@ -361,6 +363,7 @@ jobs:
           volume_name             = "country_currency_data"
           databricks_warehouse_id = "${{ secrets.DATABRICKS_WAREHOUSE_ID }}"
           skip_validation         = true
+          create_schema           = false
           EOF
 
       - name: Terraform Init

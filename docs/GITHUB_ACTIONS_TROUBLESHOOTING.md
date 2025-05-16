@@ -33,6 +33,30 @@ This occurs when the hardcoded catalog name in the GitHub Actions workflow doesn
 
 3. **Verify the catalog exists** in your Databricks workspace before deploying.
 
+### Schema Already Exists Error
+
+**Problem:**
+When deploying to environments where the database schema was already created in previous deployments, you might encounter this error:
+```
+Error: cannot create schema: Schema 'country_currency' already exists
+
+  with databricks_schema.schema,
+  on main.tf line 71, in resource "databricks_schema" "schema":
+  71: resource "databricks_schema" "schema" {
+```
+
+**Solution:**
+This error occurs because Terraform is trying to create a schema that already exists in your Databricks workspace. The solution:
+
+1. Set the `create_schema` variable to `false` in your GitHub Actions workflow:
+   ```yaml
+   create_schema = false
+   ```
+   
+2. This has already been configured for all environments in the CI/CD workflow.
+
+3. For more details on handling existing infrastructure, see [EXISTING_INFRASTRUCTURE.md](EXISTING_INFRASTRUCTURE.md).
+
 ### Duplicate Required Providers Configuration Error
 
 **Problem:**
