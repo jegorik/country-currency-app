@@ -2,7 +2,7 @@
 Data operations module for performing CRUD operations on country-currency data.
 """
 import logging
-from streamlit.utils.databricks_client import DatabricksClient
+from utils.databricks_client import DatabricksClient
 
 # Configure logger
 logger = logging.getLogger(__name__)

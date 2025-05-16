@@ -11,9 +11,13 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
+# Add the streamlit directory to the Python path
+streamlit_dir = project_root / 'streamlit'
+sys.path.insert(0, str(streamlit_dir))
+
 # Import the modules to test
-from streamlit.operations.data_operations import DataOperations
-from streamlit.models.country_currency import CountryCurrency
+from operations.data_operations import DataOperations
+from models.country_currency import CountryCurrency
 
 class TestDataOperations(unittest.TestCase):
     """Test cases for the DataOperations class."""
@@ -23,10 +27,10 @@ class TestDataOperations(unittest.TestCase):
         # Create a mock DatabricksClient
         self.mock_client = MagicMock()
         self.mock_client.config.full_table_name = "test_catalog.test_schema.test_table"
-        
+
         # Create a DataOperations instance with the mock client
         self.data_ops = DataOperations(self.mock_client)
-        
+
         # Sample test data
         self.test_record = {
             'country_code': 'TST',
@@ -36,7 +40,7 @@ class TestDataOperations(unittest.TestCase):
             'currency_name': 'Test Currency',
             'currency_number': 999
         }
-        
+
         # Sample test record as CountryCurrency object
         self.test_record_obj = CountryCurrency(
             country_code='TST',
@@ -51,14 +55,14 @@ class TestDataOperations(unittest.TestCase):
         """Test getting all records."""
         # Set up the mock to return test data
         self.mock_client.execute_query.return_value = [self.test_record]
-        
+
         # Call the method
         result = self.data_ops.get_all_records()
-        
+
         # Verify the result
         self.assertEqual(len(result), 1)
         self.assertEqual(result[0]['country_code'], 'TST')
-        
+
         # Verify the mock was called correctly
         self.mock_client.execute_query.assert_called_once()
         call_args = self.mock_client.execute_query.call_args[0][0]
@@ -68,13 +72,13 @@ class TestDataOperations(unittest.TestCase):
         """Test getting records with a filter."""
         # Set up the mock to return test data
         self.mock_client.execute_query.return_value = [self.test_record]
-        
+
         # Call the method with a filter
         result = self.data_ops.get_all_records(filter_query="Test")
-        
+
         # Verify the result
         self.assertEqual(len(result), 1)
-        
+
         # Verify the mock was called correctly
         self.mock_client.execute_query.assert_called_once()
         call_args = self.mock_client.execute_query.call_args[0][0]
@@ -85,13 +89,13 @@ class TestDataOperations(unittest.TestCase):
         """Test getting a record by ID."""
         # Set up the mock to return test data
         self.mock_client.execute_query.return_value = [self.test_record]
-        
+
         # Call the method
         result = self.data_ops.get_record_by_id('TST')
-        
+
         # Verify the result
         self.assertEqual(result['country_code'], 'TST')
-        
+
         # Verify the mock was called correctly
         self.mock_client.execute_query.assert_called_once()
         call_args = self.mock_client.execute_query.call_args[0][0]
@@ -101,10 +105,10 @@ class TestDataOperations(unittest.TestCase):
         """Test getting a record by ID when it doesn't exist."""
         # Set up the mock to return empty list
         self.mock_client.execute_query.return_value = []
-        
+
         # Call the method
         result = self.data_ops.get_record_by_id('NONEXISTENT')
-        
+
         # Verify the result is None
         self.assertIsNone(result)
 
@@ -112,13 +116,13 @@ class TestDataOperations(unittest.TestCase):
         """Test creating a new record."""
         # Set up the mock
         self.mock_client.execute_query.return_value = None
-        
+
         # Call the method
         result = self.data_ops.create_record(self.test_record)
-        
+
         # Verify the result
         self.assertTrue(result)
-        
+
         # Verify the mock was called correctly
         self.mock_client.execute_query.assert_called_once()
         call_args = self.mock_client.execute_query.call_args[0][0]
@@ -128,13 +132,13 @@ class TestDataOperations(unittest.TestCase):
         """Test adding a record using a CountryCurrency object."""
         # Set up the mock
         self.mock_client.execute_query.return_value = None
-        
+
         # Call the method
         result = self.data_ops.add_record(self.test_record_obj)
-        
+
         # Verify the result
         self.assertTrue(result)
-        
+
         # Verify the mock was called correctly
         self.mock_client.execute_query.assert_called_once()
         call_args = self.mock_client.execute_query.call_args[0][0]
@@ -145,16 +149,16 @@ class TestDataOperations(unittest.TestCase):
         # Set up the mock for the check query
         check_result = [{'count': 1}]
         verify_result = [self.test_record]
-        
+
         # Configure the mock to return different values for different calls
         self.mock_client.execute_query.side_effect = [check_result, None, verify_result]
-        
+
         # Call the method
         result = self.data_ops.update_record(self.test_record_obj)
-        
+
         # Verify the result
         self.assertTrue(result)
-        
+
         # Verify the mock was called correctly
         self.assertEqual(self.mock_client.execute_query.call_count, 3)
         update_call_args = self.mock_client.execute_query.call_args_list[1][0][0]
@@ -164,10 +168,10 @@ class TestDataOperations(unittest.TestCase):
         """Test updating a record that doesn't exist."""
         # Set up the mock for the check query to return no records
         self.mock_client.execute_query.return_value = [{'count': 0}]
-        
+
         # Call the method
         result = self.data_ops.update_record(self.test_record_obj)
-        
+
         # Verify the result is False
         self.assertFalse(result)
 
@@ -175,13 +179,13 @@ class TestDataOperations(unittest.TestCase):
         """Test deleting a record."""
         # Set up the mock
         self.mock_client.execute_query.return_value = None
-        
+
         # Call the method
         result = self.data_ops.delete_record('TST')
-        
+
         # Verify the result
         self.assertTrue(result)
-        
+
         # Verify the mock was called correctly
         self.mock_client.execute_query.assert_called_once()
         call_args = self.mock_client.execute_query.call_args[0][0]
@@ -191,13 +195,13 @@ class TestDataOperations(unittest.TestCase):
         """Test counting records."""
         # Set up the mock to return a count
         self.mock_client.execute_query.return_value = [{'count': 42}]
-        
+
         # Call the method
         result = self.data_ops.count_records()
-        
+
         # Verify the result
         self.assertEqual(result, 42)
-        
+
         # Verify the mock was called correctly
         self.mock_client.execute_query.assert_called_once()
         call_args = self.mock_client.execute_query.call_args[0][0]

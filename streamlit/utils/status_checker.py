@@ -1,7 +1,7 @@
 """
 Utility for checking the status of Databricks jobs.
 """
-from streamlit.utils.databricks_client import DatabricksClient
+from utils.databricks_client import DatabricksClient
 
 def check_databricks_job_status(client: DatabricksClient, job_id: str) -> str:
     """
