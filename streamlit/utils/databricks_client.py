@@ -7,7 +7,7 @@ import socket
 from queue import Queue, Empty
 from databricks.sdk import WorkspaceClient
 from databricks.sql import connect
-from config.app_config import AppConfig
+from streamlit.config.app_config import AppConfig
 
 # Configure logger
 logger = logging.getLogger(__name__)
