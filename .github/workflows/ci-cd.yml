@@ -164,7 +164,7 @@ jobs:
 
       - name: Install Test Dependencies
         run: |
-          pip install pytest pytest-mock nbformat pyspark==3.3.0 pyarrow
+          pip install pytest pytest-mock nbformat pyspark==3.3.0 pyarrow databricks-sdk databricks-sql-connector
 
       - name: Scan for vulnerabilities
         uses: snyk/actions/python@master
