@@ -2,10 +2,11 @@
 Data operations module for performing CRUD operations on country-currency data.
 """
 import logging
-from streamlit.utils.databricks_client import DatabricksClient
+from utils.databricks_client import DatabricksClient
 
 # Configure logger
 logger = logging.getLogger(__name__)
+
 
 class DataOperations:
     """Class for handling CRUD operations on the country-currency data."""
@@ -155,7 +156,8 @@ class DataOperations:
                 logger.info(f"Update successful for country_code: {record_dict['country_code']}")
                 return True
             else:
-                logger.warning(f"Update may have failed, could not verify record in database for country_code: {record_dict['country_code']}")
+                logger.warning(
+                    f"Update may have failed, could not verify record in database for country_code: {record_dict['country_code']}")
                 return False
 
         except Exception as e:
