@@ -66,6 +66,7 @@ country-currency-app/
 │   ├── MIGRATION.md
 │   ├── TROUBLESHOOTING.md
 │   ├── GITHUB_ACTIONS_TROUBLESHOOTING.md
+│   ├── EXISTING_INFRASTRUCTURE.md # How to handle existing resources
 │   ├── CI_CD.md
 │   ├── STREAMLIT_APP.md     # Documentation for the Streamlit app
 │   └── Other documentation files

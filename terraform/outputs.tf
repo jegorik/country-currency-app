@@ -3,7 +3,7 @@
 
 output "schema_id" {
   description = "ID of the created Databricks schema"
-  value       = databricks_schema.schema.id
+  value       = var.create_schema ? databricks_schema.schema[0].id : "${var.catalog_name}.${var.schema_name}"
 }
 
 output "table_id" {
@@ -23,7 +23,7 @@ output "job_url" {
 
 output "table_full_name" {
   description = "Fully qualified name of the created table"
-  value       = "${var.catalog_name}.${databricks_schema.schema.name}.${var.table_name}"
+  value       = "${var.catalog_name}.${var.schema_name}.${var.table_name}"
 }
 
 output "volume_path" {

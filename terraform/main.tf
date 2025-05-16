@@ -67,8 +67,17 @@ resource "null_resource" "start_warehouse_linux" {
 # Data Storage: Schema and Volume Creation
 #----------------------------------------------
 
-# Create schema to organize data objects
+# Variable to control schema creation
+variable "create_schema" {
+  description = "Whether to create the schema - set to false if schema already exists"
+  type        = bool
+  default     = true
+}
+
+# Create schema to organize data objects (only if it doesn't already exist)
 resource "databricks_schema" "schema" {
+  count = var.create_schema ? 1 : 0
+  
   catalog_name  = var.catalog_name
   name          = var.schema_name
   comment       = "Schema for country-currency mapping data in ${var.environment} environment"
@@ -87,7 +96,7 @@ resource "databricks_schema" "schema" {
 # Create volume to store uploaded CSV data files
 resource "databricks_volume" "volume" {
   catalog_name = var.catalog_name
-  schema_name  = databricks_schema.schema.name
+  schema_name  = var.schema_name # Use the variable directly since schema might already exist
   name         = var.volume_name
   volume_type  = "MANAGED"
   comment      = "Volume for storing country-currency CSV data files"
@@ -100,7 +109,7 @@ resource "databricks_volume" "volume" {
 # Create Delta table with schema for country-currency mapping data
 resource "databricks_sql_table" "table" {
   catalog_name       = var.catalog_name
-  schema_name        = databricks_schema.schema.name
+  schema_name        = var.schema_name # Use the variable directly instead of the resource reference
   name               = var.table_name
   table_type         = "MANAGED"
   data_source_format = "DELTA"
@@ -146,7 +155,7 @@ resource "databricks_sql_table" "table" {
   }
 
   depends_on = [
-    databricks_schema.schema,
+    # Schema dependency is optional since it might already exist
     null_resource.start_warehouse_windows,
     null_resource.start_warehouse_linux
   ]
@@ -159,7 +168,7 @@ resource "databricks_sql_table" "table" {
 # Upload CSV file containing country-currency data to the Databricks volume
 resource "databricks_file" "csv_data" {
   source = "${path.module}/../data/csv_data/country_code_to_currency_code.csv"
-  path   = "/Volumes/${var.catalog_name}/${databricks_schema.schema.name}/${databricks_volume.volume.name}/data.csv"
+  path   = "/Volumes/${var.catalog_name}/${var.schema_name}/${databricks_volume.volume.name}/data.csv"
 
   depends_on = [databricks_volume.volume]
 }
@@ -197,7 +206,7 @@ resource "databricks_job" "load_data_job" {
       notebook_path = databricks_notebook.load_data_notebook.path
       base_parameters = {
         catalog_name   = var.catalog_name
-        schema_name    = databricks_schema.schema.name
+        schema_name    = var.schema_name
         table_name     = databricks_sql_table.table.name
         csv_path       = databricks_file.csv_data.path
         warehouse_name = var.skip_validation ? "Mock Warehouse" : data.databricks_sql_warehouse.existing_warehouse[0].name
