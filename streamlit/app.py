@@ -26,24 +26,7 @@ def debug_print(*args, **kwargs):
         print(*args, **kwargs)
     logger.debug(" ".join(str(a) for a in args))
 
-# Function to refresh data by clearing cache state
-def refresh_data():
-    """
-    Refresh data by clearing any cached state.
-    Call this function after any data modification operation.
-    """
-    # Clear any cached data
-    if "last_refresh" in st.session_state:
-        st.session_state.pop("last_refresh", None)
-    
-    # Reset to first page of results
-    if "current_page" in st.session_state:
-        st.session_state.current_page = 1
-    
-    # Log the refresh action
-    logger.info("Data refresh triggered")
-    
-    # Note: We keep data_loaded=True since we're just refreshing, not disconnecting
+# Removed duplicate refresh_data function - using the one from utils.app_utils instead
 
 # Add the project to the Python path
 sys.path.insert(0, str(Path(__file__).parent))
