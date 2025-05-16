@@ -81,15 +81,6 @@ country-currency-app/
 │   └── prod.tfvars        # Production environment variables
 ├── compliance/            # Terraform compliance tests
 │   └── basic_checks.feature  # Policy-as-code tests
-├── csv_data/              # Source data
-│   └── country_code_to_currency_code.csv
-├── notebooks/             # Databricks notebooks
-│   └── load_data_notebook_jupyter.ipynb  # Data processing notebook in Jupyter format
-├── tests/                 # Test files for application code
-│   └── test_load_data_notebook.py
-├── environments/            # Environment-specific configuration
-├── ci/                      # CI/CD configuration files
-├── tests/                   # Test files
 └── README.md                # Project documentation (this file)
 ```
 

@@ -63,7 +63,7 @@ The consolidated test script (`scripts/run_tests.sh`) was updated to:
 
 The project's CI/CD configuration is organized as follows:
 
-- `.github/workflows/ci-cd-updated.yml` - The active GitHub Actions workflow
+- `.github/workflows/ci-cd.yml` - The active GitHub Actions workflow
 - `ci/github-workflow-update.yml` - A development/template version of the workflow
 - `docs/CI_CD.md` - General CI/CD documentation
 
