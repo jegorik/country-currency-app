@@ -23,12 +23,12 @@ def load_terraform_vars():
         'table_name': 'country_currency',
         'databricks_warehouse_id': ''
     }
-    
+
     try:
         # Get the path to terraform.tfvars
         base_dir = Path(__file__).parent.parent.parent
         tfvars_path = base_dir / 'terraform' / 'terraform.tfvars'
-        
+
         if tfvars_path.exists():
             with open(tfvars_path, 'r') as f:
                 for line in f:
@@ -49,11 +49,11 @@ def render_sidebar():
     """Render the sidebar component."""
     # Load config values from terraform.tfvars
     config_values = load_terraform_vars()
-    
+
     with st.sidebar:
         st.image("https://databricks.com/wp-content/uploads/2021/10/DB-logo-clear-background-1.svg", width=200)
         st.title("Country Currency App")
-        
+
         # Connection Status
         if "databricks_client" in st.session_state and st.session_state.databricks_client:
             st.sidebar.success("✅ Connected to Databricks")
@@ -65,10 +65,10 @@ def render_sidebar():
                 st.write(f"**Table:** {st.session_state.databricks_client.config.table}")
         else:
             st.sidebar.warning("⚠️ Not connected to Databricks")
-        
+
         # Connect to Databricks Section
         st.sidebar.subheader("Databricks Connection")
-        
+
         if not st.session_state.authenticated:
             # Create connection form
             with st.sidebar.form("databricks_connection_form"):
@@ -79,7 +79,7 @@ def render_sidebar():
                 default_schema = config_values.get('schema_name') or os.environ.get("DATABRICKS_SCHEMA", "default")
                 default_table = config_values.get('table_name') or os.environ.get("DATABRICKS_TABLE", "country_currency")
                 default_warehouse_id = config_values.get('databricks_warehouse_id') or os.environ.get("DATABRICKS_WAREHOUSE_ID", "")
-                
+
                 # Connection form fields
                 host = st.text_input("Databricks Host", value=default_host, 
                                     placeholder="e.g. https://your-workspace.cloud.databricks.com")
@@ -93,9 +93,9 @@ def render_sidebar():
                                     placeholder="e.g. country_currency")
                 warehouse_id = st.text_input("Warehouse ID", value=default_warehouse_id,
                                           placeholder="SQL Warehouse ID (optional)")
-                
+
                 connect_submitted = st.form_submit_button("Connect")
-            
+
             if connect_submitted:
                 if not host or not token or not catalog or not schema or not table:
                     st.sidebar.error("Please fill in all required fields")
@@ -103,7 +103,7 @@ def render_sidebar():
                     # Show spinner while connecting
                     status_placeholder = st.sidebar.empty()
                     status_placeholder.info("Connecting to Databricks...")
-                    
+
                     try:
                         # Create configuration
                         config = AppConfig(
@@ -114,14 +114,14 @@ def render_sidebar():
                             table=table,
                             warehouse_id=warehouse_id if warehouse_id else None
                         )
-                        
+
                         # Save config to session state
                         st.session_state.config = config
-                        
+
                         # Create and test client
                         client = DatabricksClient(config)
                         connection_ok = client.test_connection()
-                        
+
                         if connection_ok:
                             st.session_state.databricks_client = client
                             st.session_state.authenticated = True
@@ -132,28 +132,28 @@ def render_sidebar():
                             status_placeholder.error("Connection test failed")
                     except Exception as e:
                         status_placeholder.error(f"Connection error: {str(e)}")
-        
+
         elif st.session_state.authenticated:
             # Display navigation options in card
             st.markdown(card_start(), unsafe_allow_html=True)
-            
+
             col1, col2 = st.columns(2)
             with col1:
                 if st.button("🏠 Home", use_container_width=True):
                     st.session_state.current_view = "home"
                     st.rerun()
-            
+
             with col2:
                 if st.button("➕ Add New", use_container_width=True):
                     st.session_state.current_view = "add"
                     st.rerun()
-            
+
             st.markdown(card_end(), unsafe_allow_html=True)
-            
+
             # Display connection info in card
             st.markdown(section_header("🔌", "Connection Info"), unsafe_allow_html=True)
             st.markdown(card_start(), unsafe_allow_html=True)
-            
+
             st.markdown(f"""
             <div style="font-size: 0.9rem;">
                 <div style="display: flex; margin-bottom: 8px;">
@@ -178,16 +178,16 @@ def render_sidebar():
                 </div>
             </div>
             """, unsafe_allow_html=True)
-            
+
             st.markdown(card_end(), unsafe_allow_html=True)
-            
+
             # Add a disconnect button
             if st.button("🔓 Disconnect", use_container_width=True):
                 st.session_state.authenticated = False
                 st.session_state.databricks_client = None
                 st.session_state.current_view = "home"
                 st.rerun()
-        
+
         # Display app information
         st.divider()
         st.markdown("""
