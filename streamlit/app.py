@@ -26,24 +26,7 @@ def debug_print(*args, **kwargs):
         print(*args, **kwargs)
     logger.debug(" ".join(str(a) for a in args))
 
-# Function to refresh data by clearing cache state
-def refresh_data():
-    """
-    Refresh data by clearing any cached state.
-    Call this function after any data modification operation.
-    """
-    # Clear any cached data
-    if "last_refresh" in st.session_state:
-        st.session_state.pop("last_refresh", None)
-    
-    # Reset to first page of results
-    if "current_page" in st.session_state:
-        st.session_state.current_page = 1
-    
-    # Log the refresh action
-    logger.info("Data refresh triggered")
-    
-    # Note: We keep data_loaded=True since we're just refreshing, not disconnecting
+# Removed duplicate refresh_data function - using the one from utils.app_utils instead
 
 # Add the project to the Python path
 sys.path.insert(0, str(Path(__file__).parent))
@@ -91,10 +74,15 @@ if st.session_state.current_view == "home":
 elif st.session_state.current_view in ["add", "edit", "delete"]:
     render_crud_views()
 elif st.session_state.current_view == "batch_upload":
-    st.error("Batch upload functionality is not yet implemented")
-    if st.button("Back to Home"):
-        st.session_state.current_view = "home"
-        st.rerun()
+    try:
+        from ui.batch_upload import render_batch_upload_view
+        render_batch_upload_view()
+    except Exception as e:
+        st.error(f"Error loading batch upload view: {str(e)}")
+        logger.error(f"Error loading batch upload view: {str(e)}", exc_info=True)
+        if st.button("Back to Home"):
+            st.session_state.current_view = "home"
+            st.rerun()
 elif st.session_state.current_view == "analytics":
     try:
         from ui.visualizations import render_visualizations

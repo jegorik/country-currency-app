@@ -33,7 +33,7 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
-          
+
       - name: Install terraform-compliance
         run: |
           pip install terraform-compliance==${{ env.TERRAFORM_COMPLIANCE_VERSION }}
@@ -64,13 +64,13 @@ jobs:
           echo "Skipping terraform plan and using mock plan generator instead"
           # Install jq for JSON debugging
           sudo apt-get update && sudo apt-get install -y jq
-          
+
           # Run the mock generator with verbose error handling
           python ../ci/mock_plan_generator.py --output terraform-plan.json
-          
-          # Verify the JSON is validpip install databricks-cl
+
+          # Verify the JSON is valid
           python -c "import json; json.load(open('terraform-plan.json')); print('JSON validation successful')"
-          
+
           # Create a fallback plan if the mock generator failed
           if [ ! -s terraform-plan.json ]; then
             echo "Mock plan generation failed, creating simple plan JSON"
@@ -86,21 +86,21 @@ jobs:
           echo "Plan structure:"
           jq '.' terraform-plan.json > /dev/null || echo "Invalid JSON file format"
           jq 'keys' terraform-plan.json || true
-          
+
           # Validate JSON before running compliance check
           python -c "import json; json.load(open('terraform-plan.json'))" && echo "JSON is valid" || echo "JSON is invalid"
-          
+
           # Save output to a file so we can use it in summary and comments
           mkdir -p ../compliance-results
           terraform-compliance -f ../compliance/ -p terraform-plan.json -S --no-failure 2>&1 | tee ../compliance-results/results.txt || echo "Compliance check had issues"
-          
+
           # Create a formatted report for display
           echo "### Terraform Compliance Results" > ../compliance-results/formatted-report.md
           echo "\`\`\`" >> ../compliance-results/formatted-report.md
           cat ../compliance-results/results.txt >> ../compliance-results/formatted-report.md
           echo "\`\`\`" >> ../compliance-results/formatted-report.md
         continue-on-error: true
-        
+
       # No need for restoration since we didn't modify any files
 
       - name: Post Compliance Results to PR
@@ -110,14 +110,14 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const fs = require('fs');
-            
+
             // Determine status message based on outcome
             let statusEmoji = steps.compliance.outcome === 'success' ? '✅' : '⚠️';
             let statusTitle = steps.compliance.outcome === 'success' ? 'Terraform Compliance Check Passed' : 'Terraform Compliance Check Has Issues';
             let statusDetail = steps.compliance.outcome === 'success' 
               ? 'All compliance checks passed successfully.'
               : 'The pull request contains infrastructure code that may not comply with defined policies.';
-            
+
             // Try to read the formatted report
             let report = '';
             try {
@@ -125,7 +125,7 @@ jobs:
             } catch (error) {
               report = '*Detailed report not available. Check workflow logs for more information.*';
             }
-            
+
             // Create a comment with the compliance results
             github.rest.issues.createComment({
               issue_number: context.issue.number,
@@ -134,16 +134,16 @@ jobs:
               body: `## ${statusEmoji} ${statusTitle}\n\n${statusDetail}\n\n${report}\n\n` +
                     `[View detailed logs](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})`
             })
-            
+
       - name: Summary
         if: always()
         run: |
           echo "Compliance check completed. Review the logs for results."
-          
+
           # Create a summary report visible in GitHub UI
           echo "## Terraform Compliance Check Results" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          
+
           if [ "${{ steps.compliance.outcome }}" == "success" ]; then
             echo "✅ **All compliance checks passed!**" >> $GITHUB_STEP_SUMMARY
           else
@@ -151,13 +151,13 @@ jobs:
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "See the [workflow run details](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}) for more information." >> $GITHUB_STEP_SUMMARY
           fi
-          
+
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### How To View Detailed Results" >> $GITHUB_STEP_SUMMARY
           echo "1. Go to the Actions tab in the repository" >> $GITHUB_STEP_SUMMARY
           echo "2. Click on the 'Terraform Compliance Checks' workflow run" >> $GITHUB_STEP_SUMMARY
           echo "3. Expand the 'Run Terraform Compliance' job to see the full output" >> $GITHUB_STEP_SUMMARY
-          
+
           # We're not failing the workflow for compliance issues during development
           # This makes it easier to see the actual results without having to re-run the workflow
           exit 0

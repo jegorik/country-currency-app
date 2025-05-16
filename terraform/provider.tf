@@ -11,7 +11,7 @@ terraform {
     # Databricks provider for managing Databricks resources
     databricks = {
       source  = "databricks/databricks"
-      version = "~>1.77.0"
+      version = "~>1.0"
     }
   }
 
