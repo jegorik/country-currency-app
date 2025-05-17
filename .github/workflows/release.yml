@@ -29,9 +29,27 @@ permissions:
   issues: write
 
 jobs:
+  # Add a wait job that depends on the CI/CD workflow completing
+  wait_for_deployment:
+    name: Wait for CI/CD Deployment
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Wait for CI/CD workflow
+        uses: lewagon/wait-on-check-action@v1.3.1
+        with:
+          ref: ${{ github.ref }}
+          check-name: 'deploy-prod'
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          wait-interval: 20
+
   release:
     name: Create Release
     runs-on: ubuntu-latest
+    needs: [wait_for_deployment]
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -172,7 +190,8 @@ jobs:
       
       - name: Update Version in Files
         run: |
-          VERSION_WITHOUT_V="${{ env.RELEASE_VERSION }#v}"
+          VERSION_WITHOUT_V="${{ env.RELEASE_VERSION }}"
+          VERSION_WITHOUT_V="${VERSION_WITHOUT_V#v}"
           
           # Update version in relevant files
           if [[ -f "version.tf" ]]; then
