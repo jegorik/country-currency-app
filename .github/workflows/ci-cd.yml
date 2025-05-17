@@ -142,6 +142,25 @@ jobs:
           cd terraform
           terraform init
 
+      - name: Diagnostic Check
+        run: |
+          echo "Running diagnostic checks for Databricks resources..."
+          
+          # Check catalog existence
+          echo "Checking catalog ${{ secrets.DATABRICKS_CATALOG_TEST }}..."
+          curl -s -X GET "${{ secrets.DATABRICKS_HOST }}/api/2.1/unity-catalog/catalogs/${{ secrets.DATABRICKS_CATALOG_TEST }}" \
+            -H "Authorization: Bearer ${{ secrets.DATABRICKS_TOKEN }}" | jq .
+
+          # List schemas in catalog to verify access
+          echo "Listing schemas in catalog ${{ secrets.DATABRICKS_CATALOG_TEST }}..."
+          curl -s -X GET "${{ secrets.DATABRICKS_HOST }}/api/2.1/unity-catalog/schemas?catalog_name=${{ secrets.DATABRICKS_CATALOG_TEST }}" \
+            -H "Authorization: Bearer ${{ secrets.DATABRICKS_TOKEN }}" | jq '.schemas[] | .name' || echo "Could not list schemas"
+            
+          # Check warehouse status
+          echo "Checking warehouse ${{ secrets.DATABRICKS_WAREHOUSE_ID }} status..."
+          curl -s -X GET "${{ secrets.DATABRICKS_HOST }}/api/2.0/sql/warehouses/${{ secrets.DATABRICKS_WAREHOUSE_ID }}" \
+            -H "Authorization: Bearer ${{ secrets.DATABRICKS_TOKEN }}" | jq '.state'
+
       - name: Terraform Validate
         id: validate
         run: |
@@ -278,17 +297,74 @@ jobs:
           volume_name             = "country_currency_data"
           databricks_warehouse_id = "${{ secrets.DATABRICKS_WAREHOUSE_ID }}"
           skip_validation         = false
-          create_schema           = false
-          create_volume           = false
-          create_table            = false
-          upload_csv              = false
           EOF
+
+      - name: Check Resource Existence
+        id: check_resources
+        run: |
+          echo "Checking if resources exist in test environment..."
+          
+          STATUS_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+            -X GET "${{ secrets.DATABRICKS_HOST }}/api/2.1/unity-catalog/schemas/${{ secrets.DATABRICKS_CATALOG_TEST }}.country_currency" \
+            -H "Authorization: Bearer ${{ secrets.DATABRICKS_TOKEN }}")
+            
+          if [ "$STATUS_CODE" -eq 200 ]; then
+            echo "Schema exists, using existing resources"
+            echo "CREATE_SCHEMA=false" >> $GITHUB_OUTPUT
+            echo "CREATE_VOLUME=false" >> $GITHUB_OUTPUT
+            echo "CREATE_TABLE=false" >> $GITHUB_OUTPUT
+            echo "UPLOAD_CSV=false" >> $GITHUB_OUTPUT
+          else
+            echo "Schema does not exist, will create resources"
+            echo "CREATE_SCHEMA=true" >> $GITHUB_OUTPUT
+            echo "CREATE_VOLUME=true" >> $GITHUB_OUTPUT
+            echo "CREATE_TABLE=true" >> $GITHUB_OUTPUT
+            echo "UPLOAD_CSV=true" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Update terraform.tfvars with resource existence flags
+        run: |
+          # Get values from the check_resources step output
+          CREATE_SCHEMA="${{ steps.check_resources.outputs.CREATE_SCHEMA || 'true' }}"
+          CREATE_VOLUME="${{ steps.check_resources.outputs.CREATE_VOLUME || 'true' }}"
+          CREATE_TABLE="${{ steps.check_resources.outputs.CREATE_TABLE || 'true' }}"
+          UPLOAD_CSV="${{ steps.check_resources.outputs.UPLOAD_CSV || 'true' }}"
+          
+          # Append to tfvars file
+          cat >> terraform/terraform.tfvars <<EOF
+          create_schema           = ${CREATE_SCHEMA}
+          create_volume           = ${CREATE_VOLUME}
+          create_table            = ${CREATE_TABLE}
+          upload_csv              = ${UPLOAD_CSV}
+          EOF
+          
+          echo "Updated terraform.tfvars contents:"
+          cat terraform/terraform.tfvars
 
       - name: Terraform Init
         id: init
         run: |
           cd terraform
           terraform init -upgrade  # Force downloading the latest provider version
+
+      - name: Diagnostic Check
+        run: |
+          echo "Running diagnostic checks for Databricks resources..."
+          
+          # Check catalog existence
+          echo "Checking catalog ${{ secrets.DATABRICKS_CATALOG_TEST }}..."
+          curl -s -X GET "${{ secrets.DATABRICKS_HOST }}/api/2.1/unity-catalog/catalogs/${{ secrets.DATABRICKS_CATALOG_TEST }}" \
+            -H "Authorization: Bearer ${{ secrets.DATABRICKS_TOKEN }}" | jq .
+
+          # List schemas in catalog to verify access
+          echo "Listing schemas in catalog ${{ secrets.DATABRICKS_CATALOG_TEST }}..."
+          curl -s -X GET "${{ secrets.DATABRICKS_HOST }}/api/2.1/unity-catalog/schemas?catalog_name=${{ secrets.DATABRICKS_CATALOG_TEST }}" \
+            -H "Authorization: Bearer ${{ secrets.DATABRICKS_TOKEN }}" | jq '.schemas[] | .name' || echo "Could not list schemas"
+            
+          # Check warehouse status
+          echo "Checking warehouse ${{ secrets.DATABRICKS_WAREHOUSE_ID }} status..."
+          curl -s -X GET "${{ secrets.DATABRICKS_HOST }}/api/2.0/sql/warehouses/${{ secrets.DATABRICKS_WAREHOUSE_ID }}" \
+            -H "Authorization: Bearer ${{ secrets.DATABRICKS_TOKEN }}" | jq '.state'
 
       - name: Terraform Validate
         id: validate
@@ -317,7 +393,41 @@ jobs:
         run: |
           # Extract job ID from Terraform output
           cd terraform
-          JOB_ID=$(terraform output -raw job_id)
+          
+          if [ ! -f "job_id.txt" ]; then
+            echo "job_id.txt not found! Checking Terraform output..."
+            terraform output -json > terraform_output.json
+            cat terraform_output.json
+            
+            # Try to extract job_id from Terraform state
+            JOB_ID=$(terraform output -raw job_id || echo "")
+            
+            if [ -z "$JOB_ID" ]; then
+              echo "Could not determine job ID from Terraform output. Creating placeholder job_id.txt"
+              # Try to find the job by name via the API
+              JOB_NAME="Load Country Currency Data - test"
+              echo "Searching for job with name: $JOB_NAME"
+              
+              JOB_LIST=$(curl -s -X GET "${{ secrets.DATABRICKS_HOST }}/api/2.1/jobs/list" \
+                -H "Authorization: Bearer ${{ secrets.DATABRICKS_TOKEN }}")
+              
+              # Extract job_id for the job with matching name
+              JOB_ID=$(echo "$JOB_LIST" | jq -r --arg name "$JOB_NAME" '.jobs[] | select(.settings.name==$name) | .job_id')
+              
+              if [ -z "$JOB_ID" ]; then
+                echo "Could not find job. Exiting this step."
+                exit 0
+              else
+                echo "Found job ID: $JOB_ID"
+                echo "$JOB_ID" > job_id.txt
+              fi
+            else
+              echo "$JOB_ID" > job_id.txt
+            fi
+          else
+            JOB_ID=$(cat job_id.txt)
+            echo "Using job ID from job_id.txt: $JOB_ID"
+          fi
 
           echo "Manually triggering job $JOB_ID to load country-currency data for test environment..."
           response=$(curl -s -w "\n%%{http_code}" -X POST "${{ secrets.DATABRICKS_HOST }}/api/2.1/jobs/run-now" \
@@ -368,18 +478,75 @@ jobs:
           app_name                = "country-currency-app"
           volume_name             = "country_currency_data"
           databricks_warehouse_id = "${{ secrets.DATABRICKS_WAREHOUSE_ID }}"
-          skip_validation         = true
-          create_schema           = false
-          create_volume           = false
-          create_table            = false
-          upload_csv              = false
+          skip_validation         = false
           EOF
+
+      - name: Check Resource Existence
+        id: check_resources
+        run: |
+          echo "Checking if resources exist in production environment..."
+          
+          STATUS_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+            -X GET "${{ secrets.DATABRICKS_HOST }}/api/2.1/unity-catalog/schemas/${{ secrets.DATABRICKS_CATALOG_PROD }}.country_currency" \
+            -H "Authorization: Bearer ${{ secrets.DATABRICKS_TOKEN }}")
+            
+          if [ "$STATUS_CODE" -eq 200 ]; then
+            echo "Schema exists, using existing resources"
+            echo "CREATE_SCHEMA=false" >> $GITHUB_OUTPUT
+            echo "CREATE_VOLUME=false" >> $GITHUB_OUTPUT
+            echo "CREATE_TABLE=false" >> $GITHUB_OUTPUT
+            echo "UPLOAD_CSV=false" >> $GITHUB_OUTPUT
+          else
+            echo "Schema does not exist, will create resources"
+            echo "CREATE_SCHEMA=true" >> $GITHUB_OUTPUT
+            echo "CREATE_VOLUME=true" >> $GITHUB_OUTPUT
+            echo "CREATE_TABLE=true" >> $GITHUB_OUTPUT
+            echo "UPLOAD_CSV=true" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Update terraform.tfvars with resource existence flags
+        run: |
+          # Get values from the check_resources step output
+          CREATE_SCHEMA="${{ steps.check_resources.outputs.CREATE_SCHEMA || 'true' }}"
+          CREATE_VOLUME="${{ steps.check_resources.outputs.CREATE_VOLUME || 'true' }}"
+          CREATE_TABLE="${{ steps.check_resources.outputs.CREATE_TABLE || 'true' }}"
+          UPLOAD_CSV="${{ steps.check_resources.outputs.UPLOAD_CSV || 'true' }}"
+          
+          # Append to tfvars file
+          cat >> terraform/terraform.tfvars <<EOF
+          create_schema           = ${CREATE_SCHEMA}
+          create_volume           = ${CREATE_VOLUME}
+          create_table            = ${CREATE_TABLE}
+          upload_csv              = ${UPLOAD_CSV}
+          EOF
+          
+          echo "Updated terraform.tfvars contents:"
+          cat terraform/terraform.tfvars
 
       - name: Terraform Init
         id: init
         run: |
           cd terraform
           terraform init -upgrade  # Force downloading the latest provider version
+
+      - name: Diagnostic Check
+        run: |
+          echo "Running diagnostic checks for Databricks resources..."
+          
+          # Check catalog existence
+          echo "Checking catalog ${{ secrets.DATABRICKS_CATALOG_PROD }}..."
+          curl -s -X GET "${{ secrets.DATABRICKS_HOST }}/api/2.1/unity-catalog/catalogs/${{ secrets.DATABRICKS_CATALOG_PROD }}" \
+            -H "Authorization: Bearer ${{ secrets.DATABRICKS_TOKEN }}" | jq .
+
+          # List schemas in catalog to verify access
+          echo "Listing schemas in catalog ${{ secrets.DATABRICKS_CATALOG_PROD }}..."
+          curl -s -X GET "${{ secrets.DATABRICKS_HOST }}/api/2.1/unity-catalog/schemas?catalog_name=${{ secrets.DATABRICKS_CATALOG_PROD }}" \
+            -H "Authorization: Bearer ${{ secrets.DATABRICKS_TOKEN }}" | jq '.schemas[] | .name' || echo "Could not list schemas"
+            
+          # Check warehouse status
+          echo "Checking warehouse ${{ secrets.DATABRICKS_WAREHOUSE_ID }} status..."
+          curl -s -X GET "${{ secrets.DATABRICKS_HOST }}/api/2.0/sql/warehouses/${{ secrets.DATABRICKS_WAREHOUSE_ID }}" \
+            -H "Authorization: Bearer ${{ secrets.DATABRICKS_TOKEN }}" | jq '.state'
 
       - name: Terraform Validate
         id: validate
@@ -403,3 +570,71 @@ jobs:
         run: |
           cd terraform
           terraform apply -auto-approve -var-file=terraform.tfvars
+
+      - name: Trigger Data Load Job
+        run: |
+          # Extract job ID from Terraform output
+          cd terraform
+          
+          if [ ! -f "job_id.txt" ]; then
+            echo "job_id.txt not found! Checking Terraform output..."
+            terraform output -json > terraform_output.json
+            cat terraform_output.json
+            
+            # Try to extract job_id from Terraform state
+            JOB_ID=$(terraform output -raw job_id || echo "")
+            
+            if [ -z "$JOB_ID" ]; then
+              echo "Could not determine job ID from Terraform output. Creating placeholder job_id.txt"
+              # Try to find the job by name via the API
+              JOB_NAME="Load Country Currency Data - prod"
+              echo "Searching for job with name: $JOB_NAME"
+              
+              JOB_LIST=$(curl -s -X GET "${{ secrets.DATABRICKS_HOST }}/api/2.1/jobs/list" \
+                -H "Authorization: Bearer ${{ secrets.DATABRICKS_TOKEN }}")
+              
+              # Extract job_id for the job with matching name
+              JOB_ID=$(echo "$JOB_LIST" | jq -r --arg name "$JOB_NAME" '.jobs[] | select(.settings.name==$name) | .job_id')
+              
+              if [ -z "$JOB_ID" ]; then
+                echo "Could not find job. Exiting this step."
+                exit 0
+              else
+                echo "Found job ID: $JOB_ID"
+                echo "$JOB_ID" > job_id.txt
+              fi
+            else
+              echo "$JOB_ID" > job_id.txt
+            fi
+          else
+            JOB_ID=$(cat job_id.txt)
+            echo "Using job ID from job_id.txt: $JOB_ID"
+          fi
+
+          echo "Manually triggering job $JOB_ID to load country-currency data for production environment..."
+          response=$(curl -s -w "\n%%{http_code}" -X POST "${{ secrets.DATABRICKS_HOST }}/api/2.1/jobs/run-now" \
+            -H "Authorization: Bearer ${{ secrets.DATABRICKS_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d "{\"job_id\": $JOB_ID}")
+
+          status_code=$(echo "$response" | tail -n1)
+          response_body=$(echo "$response" | sed '$d')
+
+          if [ "$status_code" -eq 200 ]; then
+            run_id=$(echo "$response_body" | grep -o '"run_id":[0-9]*' | cut -d':' -f2)
+            echo "Job triggered successfully! Run ID: $run_id"
+            
+            # Wait for job to start and check initial status
+            echo "Waiting for job to start..."
+            sleep 10
+            
+            run_status=$(curl -s -X GET "${{ secrets.DATABRICKS_HOST }}/api/2.1/jobs/runs/get?run_id=$run_id" \
+              -H "Authorization: Bearer ${{ secrets.DATABRICKS_TOKEN }}" | grep -o '"state":{"life_cycle_state":"[A-Z_]*"' | cut -d'"' -f6)
+              
+            echo "Initial job status: $run_status"
+          else
+            echo "Failed to trigger job. Status code: $status_code"
+            echo "Response: $response_body"
+            # Don't fail the pipeline if job triggering fails, as the job can be run manually later
+            echo "Job will need to be triggered manually in the Databricks workspace"
+          fi
