@@ -228,7 +228,7 @@ jobs:
           project_name            = "Country Currency"
           table_name              = "country_to_currency"
           app_name                = "country-currency-app"
-          volume_name             = "country_currency_data"
+          volume_name             = "csv_data"
           databricks_warehouse_id = "${{ secrets.DATABRICKS_WAREHOUSE_ID }}"
           skip_validation         = true
           create_schema           = false
@@ -294,7 +294,7 @@ jobs:
           project_name            = "Country Currency"
           table_name              = "country_to_currency"
           app_name                = "country-currency-app"
-          volume_name             = "country_currency_data"
+          volume_name             = "csv_data"
           databricks_warehouse_id = "${{ secrets.DATABRICKS_WAREHOUSE_ID }}"
           skip_validation         = false
           EOF
@@ -476,7 +476,7 @@ jobs:
           project_name            = "Country Currency"
           table_name              = "country_to_currency"
           app_name                = "country-currency-app"
-          volume_name             = "country_currency_data"
+          volume_name             = "csv_data"
           databricks_warehouse_id = "${{ secrets.DATABRICKS_WAREHOUSE_ID }}"
           skip_validation         = false
           EOF
