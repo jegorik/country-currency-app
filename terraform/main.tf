@@ -95,6 +95,11 @@ resource "databricks_volume" "volume" {
   name         = var.volume_name
   volume_type  = "MANAGED"
   comment      = "Volume for storing country-currency CSV data files"
+  
+  # Add explicit dependency on schema to ensure proper creation order
+  depends_on = [
+    databricks_schema.schema
+  ]
 }
 
 #----------------------------------------------
@@ -152,7 +157,8 @@ resource "databricks_sql_table" "table" {
   }
 
   depends_on = [
-    # Schema dependency is optional since it might already exist
+    # Explicit schema dependency to ensure proper creation order
+    databricks_schema.schema,
     null_resource.start_warehouse_windows,
     null_resource.start_warehouse_linux
   ]
@@ -220,8 +226,12 @@ resource "databricks_job" "load_data_job" {
   }
 
   depends_on = [
-    # Only depend on resources that are always created
+    # Ensure all required resources are created first
     databricks_notebook.load_data_notebook,
+    databricks_schema.schema,
+    databricks_volume.volume,
+    databricks_sql_table.table,
+    databricks_file.csv_data,
     null_resource.start_warehouse_windows,
     null_resource.start_warehouse_linux
   ]
