@@ -70,7 +70,7 @@ resource "null_resource" "start_warehouse_linux" {
 # Create schema to organize data objects (only if it doesn't already exist)
 resource "databricks_schema" "schema" {
   count = var.create_schema ? 1 : 0
-  
+
   catalog_name  = var.catalog_name
   name          = var.schema_name
   comment       = "Schema for country-currency mapping data in ${var.environment} environment"
@@ -89,7 +89,7 @@ resource "databricks_schema" "schema" {
 # Create volume to store uploaded CSV data files (only if it doesn't already exist)
 resource "databricks_volume" "volume" {
   count = var.create_volume ? 1 : 0
-  
+
   catalog_name = var.catalog_name
   schema_name  = var.schema_name # Use the variable directly since schema might already exist
   name         = var.volume_name
@@ -104,7 +104,7 @@ resource "databricks_volume" "volume" {
 # Create Delta table with schema for country-currency mapping data (only if it doesn't already exist)
 resource "databricks_sql_table" "table" {
   count = var.create_table ? 1 : 0
-  
+
   catalog_name       = var.catalog_name
   schema_name        = var.schema_name # Use the variable directly instead of the resource reference
   name               = var.table_name
@@ -164,11 +164,11 @@ resource "databricks_sql_table" "table" {
 
 # Upload CSV file containing country-currency data to the Databricks volume (only if needed)
 resource "databricks_file" "csv_data" {
-  count  = var.upload_csv ? 1 : 0
-  
+  count = var.upload_csv ? 1 : 0
+
   source = "${path.module}/../data/csv_data/country_code_to_currency_code.csv"
   path   = "/Volumes/${var.catalog_name}/${var.schema_name}/${var.volume_name}/data.csv"
-  
+
   # Since depends_on requires a static list, we always include the dependency but use count to control creation
   depends_on = [databricks_volume.volume]
 }

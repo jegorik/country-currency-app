@@ -75,7 +75,8 @@ country-currency-app/
 ├── validate_notebook.sh   # Script to validate notebook execution
 ├── .github/               # GitHub Actions configuration
 │   └── workflows/       
-│       └── ci-cd.yml      # CI/CD pipeline definition
+│       ├── ci-cd.yml              # Main CI/CD pipeline definition
+│       └── db-resource-check.yml  # Database resource check workflow
 ├── environments/          # Environment-specific configurations 
 │   ├── dev.tfvars         # Development environment variables
 │   ├── test.tfvars        # Test environment variables
@@ -290,6 +291,7 @@ This project includes several documentation files to help users understand, use,
 - [Migration Guide](docs/MIGRATION.md) - Instructions for migrating between versions
 - [Troubleshooting](docs/TROUBLESHOOTING.md) - Common issues and solutions
 - [Streamlit App](docs/STREAMLIT_APP.md) - Documentation for the Streamlit application
+- [Database Resource Check](docs/DATABASE_RESOURCE_CHECK.md) - Documentation for the database resource check workflow
 
 ## Troubleshooting
 
@@ -408,6 +410,17 @@ This project uses GitHub Actions to automate testing, building, and deployment p
 - **Development**: Automatic deployment on pushes to the `develop` branch
 - **Test**: Manual trigger with validation checks
 - **Production**: Manual trigger with approval requirements
+
+### Database Resource Check Workflow
+
+The project includes a dedicated GitHub Actions workflow (`db-resource-check.yml`) that ensures proper database schema, volume, and table creation during deployment to Test and Prod environments. This workflow:
+
+1. Checks if the required database schema exists and creates it if not
+2. Verifies if the necessary volume is present and creates it if missing
+3. Assesses if the required tables exist and creates them if not found
+4. Includes appropriate error handling and clear deployment steps
+
+For more details on this workflow, see [DATABASE_RESOURCE_CHECK.md](docs/DATABASE_RESOURCE_CHECK.md).
 
 For complete details on the CI/CD implementation, see:
 - [CI_CD.md](docs/CI_CD.md) - General CI/CD configuration
