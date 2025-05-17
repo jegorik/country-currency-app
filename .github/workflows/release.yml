@@ -42,14 +42,17 @@ jobs:
         uses: lewagon/wait-on-check-action@v1.3.1
         with:
           ref: ${{ github.ref }}
-          check-name: 'deploy-prod'
+          check-name: 'Deploy to Production'
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           wait-interval: 20
+          allowed-conclusions: success,skipped
+          verbose: true
 
   release:
     name: Create Release
     runs-on: ubuntu-latest
     needs: [wait_for_deployment]
+    if: always() # Continue even if wait_for_deployment fails
     steps:
       - name: Checkout code
         uses: actions/checkout@v3

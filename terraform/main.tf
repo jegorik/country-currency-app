@@ -95,7 +95,7 @@ resource "databricks_volume" "volume" {
   name         = var.volume_name
   volume_type  = "MANAGED"
   comment      = "Volume for storing country-currency CSV data files"
-  
+
   # Add explicit dependency on schema to ensure proper creation order
   depends_on = [
     databricks_schema.schema
