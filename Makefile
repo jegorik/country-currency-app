@@ -1,11 +1,13 @@
 # Makefile for Country Currency App
 # Helps run common CI/CD tasks locally
 
-.PHONY: init plan apply test validate compliance clean deploy-dev deploy-test deploy-prod streamlit-app install-streamlit
+.PHONY: init plan apply test validate compliance clean deploy-dev deploy-test deploy-prod streamlit-app install-streamlit apply-existing update-existing
 
 # Variables
 ENV ?= dev
 BACKEND_CONFIG ?= 
+# Set to false by default - override with make SKIP_EXISTING=true
+SKIP_EXISTING ?= false
 
 # Init, with optional backend config (useful for different environments)
 init:
@@ -22,16 +24,42 @@ apply:
 	@echo "Applying for $(ENV) environment..."
 	@cd terraform && terraform apply $(ENV).tfplan
 
+# Apply changes skipping resources that might already exist
+# Use: make apply-existing ENV=dev
+apply-existing:
+	@echo "⚙️  Applying for $(ENV) environment (skipping existing resources)..."
+	@echo "   This will NOT attempt to create resources that may already exist in Databricks"
+	@cd terraform && terraform apply \
+		-var-file=../environments/$(ENV).tfvars \
+		-var="create_schema=false" \
+		-var="create_volume=false" \
+		-var="create_table=false" \
+		-var="upload_csv=false"
+
+# Update existing environment (plan and apply with skip flags)
+# Use: make update-existing ENV=dev
+update-existing:
+	@echo "🔄 Planning update for $(ENV) environment (skipping existing resources)..."
+	@echo "   This is safe to use when resources already exist in Databricks"
+	@cd terraform && terraform plan \
+		-var-file=../environments/$(ENV).tfvars \
+		-var="create_schema=false" \
+		-var="create_volume=false" \
+		-var="create_table=false" \
+		-var="upload_csv=false" \
+		-out=$(ENV)_update.tfplan
+	@echo "✅ Applying update for $(ENV) environment..."
+	@cd terraform && terraform apply $(ENV)_update.tfplan
+
 # Run tests
 test:
 	@echo "Running tests..."
-	@python -m pytest tests/ -v
+	@bash scripts/test/run_tests.sh
 
-# Validate all Terraform files
+# Validate notebooks
 validate:
-	@echo "Validating Terraform files..."
-	@terraform validate
-	@terraform fmt -check -recursive
+	@echo "Validating notebooks..."
+	@python ci/validate_notebooks.py
 
 # Run Terraform compliance checks
 compliance: plan
@@ -68,6 +96,33 @@ deploy-prod: init
 docs:
 	@echo "Generating documentation..."
 	@terraform-docs markdown . > TERRAFORM.md
+
+#----------------------------------------------
+# Databricks Resource Management
+#----------------------------------------------
+
+# Variable for the catalog name (default: main, override with CATALOG=your_catalog)
+CATALOG ?= main
+
+# List schemas in the specified catalog
+list-schemas:
+	@echo "📋 Listing schemas in catalog '$(CATALOG)'..."
+	@databricks schemas list --catalog=$(CATALOG)
+
+# List volumes in the specified schema (use: make list-volumes CATALOG=main SCHEMA=your_schema)
+SCHEMA ?= country_currency
+list-volumes:
+	@echo "📂 Listing volumes in schema '$(CATALOG).$(SCHEMA)'..."
+	@databricks volumes list --catalog=$(CATALOG) --schema=$(SCHEMA)
+	
+# List tables in the specified schema
+list-tables:
+	@echo "🗄️  Listing tables in schema '$(CATALOG).$(SCHEMA)'..."
+	@databricks tables list --catalog=$(CATALOG) --schema=$(SCHEMA)
+
+# Check if resources exist before deployment
+check-resources: list-schemas list-volumes list-tables
+	@echo "✅ Resource check complete."
 
 # Lint all Python files
 lint:

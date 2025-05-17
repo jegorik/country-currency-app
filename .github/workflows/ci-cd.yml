@@ -213,6 +213,9 @@ jobs:
           databricks_warehouse_id = "${{ secrets.DATABRICKS_WAREHOUSE_ID }}"
           skip_validation         = true
           create_schema           = false
+          create_volume           = false
+          create_table            = false
+          upload_csv              = false
           EOF
 
       - name: Terraform Init
@@ -276,6 +279,9 @@ jobs:
           databricks_warehouse_id = "${{ secrets.DATABRICKS_WAREHOUSE_ID }}"
           skip_validation         = false
           create_schema           = false
+          create_volume           = false
+          create_table            = false
+          upload_csv              = false
           EOF
 
       - name: Terraform Init
@@ -364,6 +370,9 @@ jobs:
           databricks_warehouse_id = "${{ secrets.DATABRICKS_WAREHOUSE_ID }}"
           skip_validation         = true
           create_schema           = false
+          create_volume           = false
+          create_table            = false
+          upload_csv              = false
           EOF
 
       - name: Terraform Init

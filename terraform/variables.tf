@@ -106,3 +106,33 @@ variable "skip_validation" {
   type        = bool
   default     = false
 }
+
+#----------------------------------------------
+# Existing Resources Configuration
+#----------------------------------------------
+
+# Variables to control creation of resources that might already exist
+
+variable "create_schema" {
+  description = "Whether to create the schema - set to false if schema already exists"
+  type        = bool
+  default     = true
+}
+
+variable "create_volume" {
+  description = "Whether to create the volume - set to false if volume already exists"
+  type        = bool
+  default     = true
+}
+
+variable "create_table" {
+  description = "Whether to create the table - set to false if table already exists"
+  type        = bool
+  default     = true
+}
+
+variable "upload_csv" {
+  description = "Whether to upload the CSV file - set to false if data already exists"
+  type        = bool
+  default     = true
+}

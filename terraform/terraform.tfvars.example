@@ -6,10 +6,16 @@ databricks_host         = "https://your-workspace.cloud.databricks.com" # Databr
 databricks_token        = "dapi123456789abcdef"                        # Your Databricks personal access token
 
 # Resource configuration
-catalog_name            = "country_currency_catalog"  # Name of the catalog to create
-schema_name             = "country_currency"          # Name of the schema to create
-table_name              = "country_to_currency"       # Name of the table to create
+catalog_name            = "country_currency_catalog"  # Name of the catalog to use
+schema_name             = "country_currency"          # Name of the schema to use
+table_name              = "country_to_currency"       # Name of the table to use
 volume_name             = "csv_data"                  # Name of the volume for CSV files
+
+# Existing resources flags - set to false if resources already exist
+create_schema           = true                        # Set to false if schema already exists
+create_volume           = true                        # Set to false if volume already exists
+create_table            = true                        # Set to false if table already exists
+upload_csv              = true                        # Set to false if CSV already uploaded
 app_name                = "country-currency-app"      # Application name (for resource organization)
 databricks_warehouse_id = "1234567890abcdef"          # ID of your existing SQL warehouse
 
