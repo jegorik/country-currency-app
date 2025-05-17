@@ -33,10 +33,10 @@ This occurs when the hardcoded catalog name in the GitHub Actions workflow doesn
 
 3. **Verify the catalog exists** in your Databricks workspace before deploying.
 
-### Schema Already Exists Error
+### Resources Already Exist Error
 
 **Problem:**
-When deploying to environments where the database schema was already created in previous deployments, you might encounter this error:
+When deploying to environments where Databricks resources were already created in previous deployments, you might encounter errors like:
 ```
 Error: cannot create schema: Schema 'country_currency' already exists
 
@@ -45,15 +45,36 @@ Error: cannot create schema: Schema 'country_currency' already exists
   71: resource "databricks_schema" "schema" {
 ```
 
-**Solution:**
-This error occurs because Terraform is trying to create a schema that already exists in your Databricks workspace. The solution:
+Or:
+```
+Error: cannot create volume: Volume '***.***.country_currency_data' already exists
 
-1. Set the `create_schema` variable to `false` in your GitHub Actions workflow:
+  with databricks_volume.volume,
+  on main.tf line 97, in resource "databricks_volume" "volume":
+  97: resource "databricks_volume" "volume" {
+```
+
+Or:
+```
+Error: cannot create sql table: statement failed to execute: FAILED
+
+  with databricks_sql_table.table,
+  on main.tf line 110, in resource "databricks_sql_table" "table":
+  110: resource "databricks_sql_table" "table" {
+```
+
+**Solution:**
+These errors occur because Terraform is trying to create resources that already exist in your Databricks workspace. The solution:
+
+1. Set the following variables to `false` in your GitHub Actions workflow:
    ```yaml
    create_schema = false
+   create_volume = false
+   create_table = false
+   upload_csv = false
    ```
    
-2. This has already been configured for all environments in the CI/CD workflow.
+2. These settings have already been configured for all environments in the CI/CD workflow.
 
 3. For more details on handling existing infrastructure, see [EXISTING_INFRASTRUCTURE.md](EXISTING_INFRASTRUCTURE.md).
 

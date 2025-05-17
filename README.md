@@ -241,6 +241,41 @@ The Streamlit app is structured following a clean architecture pattern:
 
 For more details on the Streamlit application, see [STREAMLIT_APP.md](docs/STREAMLIT_APP.md).
 
+## Makefile Commands
+
+This project includes a Makefile with convenient commands for common operations:
+
+### Infrastructure Management
+```bash
+# Initialize Terraform
+make init
+
+# Plan and apply changes for a specific environment
+make plan ENV=dev
+make apply ENV=dev
+
+# Handle existing infrastructure (skip resource creation)
+make update-existing ENV=dev
+make apply-existing ENV=test
+```
+
+### Databricks Resource Management
+```bash
+# List schemas in a catalog
+make list-schemas CATALOG=main
+
+# List volumes in a schema
+make list-volumes CATALOG=main SCHEMA=country_currency
+
+# List tables in a schema
+make list-tables CATALOG=main SCHEMA=country_currency
+
+# Check all resources before deployment
+make check-resources CATALOG=main SCHEMA=country_currency
+```
+
+### Application Management
+
 ## Project Documentation
 
 This project includes several documentation files to help users understand, use, and contribute to the project:
@@ -325,6 +360,27 @@ For specific GitHub Actions CI/CD issues, see [GITHUB_ACTIONS_TROUBLESHOOTING.md
 - Delta table for country-currency data
 - Databricks notebook for data processing
 - Automated job to load data from CSV to the table
+
+## Working with Existing Infrastructure
+
+If you have existing Databricks resources (schemas, volumes, tables) that you want to preserve when updating the application, you can use the conditional resource creation features:
+
+```bash
+# To update an environment with existing resources
+make update-existing ENV=dev
+```
+
+You can also set the following variables in your `terraform.tfvars` file:
+
+```terraform
+# Variables to control which resources to create
+create_schema = false  # Skip schema creation if it already exists
+create_volume = false  # Skip volume creation if it already exists
+create_table  = false  # Skip table creation if it already exists
+upload_csv    = false  # Skip CSV upload if the data file already exists
+```
+
+For more detailed information on handling existing infrastructure, see [Existing Infrastructure Guide](docs/EXISTING_INFRASTRUCTURE.md).
 
 ## Security Considerations
 - API tokens are marked as sensitive in the Terraform configuration

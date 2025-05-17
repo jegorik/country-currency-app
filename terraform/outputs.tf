@@ -8,7 +8,7 @@ output "schema_id" {
 
 output "table_id" {
   description = "ID of the created country-currency table"
-  value       = databricks_sql_table.table.id
+  value       = var.create_table ? databricks_sql_table.table[0].id : "${var.catalog_name}.${var.schema_name}.${var.table_name}"
 }
 
 output "job_id" {
@@ -28,7 +28,7 @@ output "table_full_name" {
 
 output "volume_path" {
   description = "Path to the volume where CSV data is stored"
-  value       = databricks_file.csv_data.path
+  value       = var.upload_csv ? databricks_file.csv_data[0].path : "/Volumes/${var.catalog_name}/${var.schema_name}/${var.volume_name}/data.csv"
 }
 
 output "notebook_path" {
