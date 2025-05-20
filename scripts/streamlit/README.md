@@ -15,11 +15,6 @@ This directory contains scripts for starting the Streamlit application. These sc
 ### Windows-Specific Scripts
 
 - `start_app.ps1`: PowerShell script to start the Streamlit application on Windows
-- `wait_and_start.ps1`: PowerShell script that waits for Databricks job completion before starting the app
-
-### Unix-Specific Scripts
-
-- `wait_and_start.sh`: Shell script that waits for Databricks job completion before starting the app
 
 ## Usage
 

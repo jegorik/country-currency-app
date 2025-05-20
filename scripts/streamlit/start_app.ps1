@@ -12,8 +12,11 @@ Write-Host "   Starting Country Currency Streamlit App   " @Blue
 Write-Host "================================================" @Blue
 Write-Host ""
 
+# Get the current script directory for proper path resolution
+$ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+
 # Check if job_id.txt file exists
-$JobIdFile = "..\terraform\job_id.txt"
+$JobIdFile = Join-Path -Path $ScriptDir -ChildPath "..\..\terraform\job_id.txt"
 if (!(Test-Path $JobIdFile)) {
     Write-Host "Job ID file not found. The app may not be able to check job status." @Yellow
     $JobId = ""
@@ -23,26 +26,16 @@ else {
     Write-Host "Found Job ID: $JobId" @Green
 }
 
-# Source variables from terraform.tfvars if it exists
-$TfvarsFile = "..\terraform\terraform.tfvars"
-if (!(Test-Path $TfvarsFile)) {
-    Write-Host "terraform.tfvars file not found. Cannot start Streamlit app." @Red
-    Write-Host "Please ensure you have run Terraform to create the infrastructure first."
-    exit 1
+# Check if workspace_url.txt file exists
+$WorkspaceUrlFile = Join-Path -Path $ScriptDir -ChildPath "..\..\terraform\workspace_url.txt"
+if (!(Test-Path $WorkspaceUrlFile)) {
+    Write-Host "Workspace URL file not found. Using default configuration." @Yellow
+    $WorkspaceUrl = "https://databricks.com"
 }
-
-# Extract variables from terraform.tfvars using regex
-$TfvarsContent = Get-Content $TfvarsFile -Raw
-$DatabricksHost = if ($TfvarsContent -match 'databricks_host\s*=\s*"([^"]+)"') { $Matches[1] } else { "" }
-$CatalogName = if ($TfvarsContent -match 'catalog_name\s*=\s*"([^"]+)"') { $Matches[1] } else { "" }
-$SchemaName = if ($TfvarsContent -match 'schema_name\s*=\s*"([^"]+)"') { $Matches[1] } else { "" }
-$TableName = if ($TfvarsContent -match 'table_name\s*=\s*"([^"]+)"') { $Matches[1] } else { "" }
-
-Write-Host "Using the following configuration:" @Green
-Write-Host "Databricks Host: $DatabricksHost"
-Write-Host "Catalog: $CatalogName"
-Write-Host "Schema: $SchemaName"
-Write-Host "Table: $TableName"
+else {
+    $WorkspaceUrl = Get-Content $WorkspaceUrlFile
+    Write-Host "Found workspace URL: $WorkspaceUrl" @Green
+}
 
 # Check if Python is installed
 if (!(Get-Command python -ErrorAction SilentlyContinue)) {
@@ -57,6 +50,7 @@ if (!(Get-Command pip -ErrorAction SilentlyContinue)) {
 }
 
 # Check if streamlit is installed
+Write-Host "Checking for required Python packages..." @Yellow
 try {
     python -c "import streamlit" > $null 2>&1
     $StreamlitInstalled = $true
@@ -65,8 +59,14 @@ try {
 }
 
 if (!$StreamlitInstalled) {
-    Write-Host "Streamlit is not installed. Installing requirements..." @Yellow
-    pip install -r requirements.txt
+    Write-Host "Installing required Python packages..." @Yellow
+    $RequirementsFile = Join-Path -Path $ScriptDir -ChildPath "requirements.txt"
+    
+    if (Test-Path $RequirementsFile) {
+        pip install -r $RequirementsFile
+    } else {
+        pip install streamlit pandas requests
+    }
     
     if ($LASTEXITCODE -ne 0) {
         Write-Host "Failed to install requirements." @Red
@@ -74,12 +74,29 @@ if (!$StreamlitInstalled) {
     }
 }
 
+# Navigate to the streamlit directory
+$StreamlitDir = Join-Path -Path $ScriptDir -ChildPath "..\..\streamlit"
+Push-Location $StreamlitDir
+
+# Check if the new UI app exists
+$NewAppPath = Join-Path -Path $StreamlitDir -ChildPath "app_new.py"
+if (Test-Path $NewAppPath) {
+    Write-Host "Starting new UI version..." @Green
+    $AppPath = "app.py"
+} else {
+    Write-Host "Starting standard UI version..." @Green
+    $AppPath = "app.py"
+}
+
 Write-Host "Starting Streamlit app..." @Blue
 Write-Host "The app will be available at http://localhost:8501" @Green
 Write-Host "Press Ctrl+C to stop the app" @Yellow
 
-# Start Streamlit app
-streamlit run app.py
+# Start Streamlit app with parameters
+streamlit run $AppPath -- --job_id="$JobId" --workspace_url="$WorkspaceUrl"
+
+# Return to original directory when done
+Pop-Location
 
 # Handle exit
 Write-Host "Streamlit app has stopped." @Blue
