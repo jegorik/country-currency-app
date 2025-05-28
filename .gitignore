@@ -1,0 +1,106 @@
+# Git Ignore Configuration for Databricks Infrastructure Project
+#
+# This file specifies intentionally untracked files that Git should ignore.
+# Organized by category for better maintainability.
+
+# =============================================================================
+# SENSITIVE CONFIGURATION FILES
+# =============================================================================
+# Never commit files containing secrets, tokens, or sensitive information
+.env
+terraform.tfvars
+*.tfvars
+!terraform.tfvars.example
+
+# =============================================================================
+# TERRAFORM STATE AND CACHE
+# =============================================================================
+# Terraform state files contain sensitive information and should be stored remotely
+*.tfstate
+*.tfstate.*
+*.tfstate.backup
+.terraform/
+.terraform.lock.hcl
+terraform.rc
+.terraformrc
+
+# =============================================================================
+# PYTHON CACHE AND VIRTUAL ENVIRONMENTS
+# =============================================================================
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+
+# =============================================================================
+# IDE AND EDITOR FILES
+# =============================================================================
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# =============================================================================
+# OPERATING SYSTEM GENERATED FILES
+# =============================================================================
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# =============================================================================
+# APPLICATION LOGS AND TEMPORARY FILES
+# =============================================================================
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+
+# =============================================================================
+# DATA AND OUTPUT FILES
+# =============================================================================
+# Exclude large data files and generated outputs (keep example/template files)
+*.parquet
+*.delta
+*.avro
+job_id.txt
+output/
+results/
+exports/
+
+# =============================================================================
+# BACKUP AND ARCHIVE FILES
+# =============================================================================
+*.bak
+*.backup
+*.old
+*.orig
+*.zip
+*.tar.gz
+*.7z
+
+# =============================================================================
+# DATABRICKS SPECIFIC
+# =============================================================================
+# Databricks CLI configuration and local notebook files
+.databricks/
+.databrickscfg
+*.dbc
+
+# =============================================================================
+# DOCUMENTATION BUILDS
+# =============================================================================
+docs/_build/
+site/
