@@ -5,6 +5,7 @@ A comprehensive data pipeline for loading and managing country-to-currency mappi
 ## 🚀 Project Overview
 
 This project implements an end-to-end data pipeline that:
+
 - **Extracts** country-currency mapping data from CSV files
 - **Transforms** and validates the data with quality checks
 - **Loads** the data into Databricks Delta tables
@@ -22,22 +23,22 @@ This project implements an end-to-end data pipeline that:
 
 ## 📁 Project Structure
 
-```
+```bash
 New_app_databriks/
-├── etl_data/                          # Source data files
+├── etl_data/                             # Source data files
 │   └── country_code_to_currency_code.csv
-├── notebooks/                         # Databricks notebooks
-│   └── load_notebook_jupyter.ipynb    # Main ETL notebook
-├── scripts/                           # Utility scripts (currently empty)
-├── terraform/                         # Infrastructure as Code
-│   ├── terraform.tfvars.example       # Configuration template
+├── notebooks/                            # Databricks notebooks
+│   └── load_notebook_jupyter.ipynb       # Main ETL notebook
+├── scripts/                              # Utility scripts (currently empty)
+├── terraform/                            # Infrastructure as Code
+│   ├── terraform.tfvars.example          # Configuration template
 │   └── dev-env/
-│       ├── backend/                   # S3 backend infrastructure
+│       ├── backend/                  # S3 backend infrastructure
 │       │   ├── s3-bucket.tf          # S3 bucket for state storage
 │       │   ├── variables.tf          # Backend variables
 │       │   ├── providers.tf          # AWS provider config
 │       │   └── outputs.tf            # Backend outputs
-│       └── databricks-ifra/           # Main Databricks infrastructure
+│       └── databricks-ifra/          # Main Databricks infrastructure
 │           ├── databricks.tf         # Core Databricks resources
 │           ├── variables.tf          # Input variables
 │           ├── providers.tf          # Provider configurations
@@ -49,12 +50,14 @@ New_app_databriks/
 ## 🛠️ Prerequisites
 
 ### Required Tools
+
 - [Terraform](https://terraform.io/) >= 1.0
 - [Databricks CLI](https://docs.databricks.com/dev-tools/cli/index.html) (optional)
 - AWS CLI configured with appropriate permissions
 - PowerShell (Windows) or Bash (Linux/macOS)
 
 ### Required Access
+
 - **Databricks Workspace**: Access to a Databricks workspace
 - **Databricks Token**: Personal access token for API authentication
 - **SQL Warehouse**: An existing SQL warehouse in your Databricks workspace
@@ -103,6 +106,7 @@ terraform apply
 ### 4. Verify Deployment
 
 After successful deployment, check your Databricks workspace for:
+
 - Created schema and volume
 - Uploaded CSV data file
 - Deployed notebook
@@ -191,6 +195,7 @@ terraform apply -var-file="terraform-dev.tfvars"
 ### Data Quality Checks
 
 The notebook includes automated data quality checks:
+
 - **Null Value Detection**: Identifies null values in key columns
 - **Record Count Validation**: Ensures all records are loaded successfully
 - **Schema Validation**: Verifies data types and structure
@@ -217,15 +222,19 @@ FROM your_catalog.your_schema.your_table;
 ### Common Issues
 
 **Issue**: Terraform fails with authentication error
+
 - **Solution**: Verify `databricks_token` and `databricks_host` are correct
 
 **Issue**: SQL warehouse not found
+
 - **Solution**: Check `databricks_warehouse_id` exists and is accessible
 
 **Issue**: CSV upload fails
+
 - **Solution**: Ensure the volume exists and has proper permissions
 
 **Issue**: Job execution fails
+
 - **Solution**: Check notebook parameters and SQL warehouse status
 
 ### Debug Commands
@@ -249,6 +258,7 @@ databricks workspace list
 ### Resource Monitoring
 
 Monitor your deployment through:
+
 - **Databricks Workspace**: Job runs, cluster usage, storage metrics
 - **AWS Console**: S3 bucket usage, costs
 - **Terraform State**: Resource drift detection
