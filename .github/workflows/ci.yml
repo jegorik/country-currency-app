@@ -1,0 +1,137 @@
+name: 'CI - Validate and Test'
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'terraform/**'
+      - 'scripts/**'
+      - 'etl_data/**'
+      - 'notebooks/**'
+  push:
+    branches: [ develop ]
+
+env:
+  TF_VERSION: '1.5.0'
+  PYTHON_VERSION: '3.9'
+
+# Required for OIDC
+permissions:
+  id-token: write   # This is required for requesting the JWT
+  contents: read    # This is required for actions/checkout
+
+jobs:
+  validate-terraform:
+    name: 'Terraform Validation'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        environment: [dev, staging, prod]
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Configure AWS credentials using OIDC
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ secrets[format('AWS_ROLE_ARN_{0}', upper(matrix.environment))] }}
+        role-session-name: GitHubActions-${{ matrix.environment }}-${{ github.run_id }}
+        aws-region: eu-central-1  # Based on your terraform.tfvars
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: ${{ env.TF_VERSION }}
+
+    - name: Terraform Format Check
+      run: terraform fmt -check -recursive terraform/
+
+    - name: Validate Backend Configuration
+      working-directory: terraform/${{ matrix.environment }}-env/backend
+      run: |
+        terraform init -backend=false
+        terraform validate
+
+    - name: Validate Databricks Configuration  
+      working-directory: terraform/${{ matrix.environment }}-env/databricks-ifra
+      run: |
+        terraform init -backend=false
+        terraform validate
+
+  validate-scripts:
+    name: 'PowerShell Script Validation'
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Test PowerShell Scripts
+      shell: pwsh
+      run: |
+        # Test script syntax
+        Get-ChildItem -Path scripts/*.ps1 | ForEach-Object {
+          Write-Host "Validating $($_.Name)"
+          $null = [System.Management.Automation.PSParser]::Tokenize((Get-Content $_.FullName -Raw), [ref]$null)
+        }
+
+    - name: Run PSScriptAnalyzer
+      shell: pwsh
+      run: |
+        Install-Module -Name PSScriptAnalyzer -Force -Scope CurrentUser
+        $results = Invoke-ScriptAnalyzer -Path scripts/ -Recurse
+        if ($results) {
+          $results | Format-Table
+          exit 1
+        }
+
+  validate-data:
+    name: 'Data Validation'
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        
+    - name: Install Dependencies
+      run: |
+        pip install pandas pytest
+        
+    - name: Validate CSV Data
+      run: |
+        python -c "
+        import pandas as pd
+        import sys
+        
+        # Load and validate CSV
+        try:
+            df = pd.read_csv('etl_data/country_code_to_currency_code.csv')
+            
+            # Check required columns
+            required_cols = ['country_code', 'country_number', 'country', 'currency_name', 'currency_code', 'currency_number']
+            missing_cols = [col for col in required_cols if col not in df.columns]
+            
+            if missing_cols:
+                print(f'Missing columns: {missing_cols}')
+                sys.exit(1)
+                
+            # Check for null values in key columns
+            null_countries = df['country_code'].isnull().sum()
+            null_currencies = df['currency_code'].isnull().sum()
+            
+            if null_countries > 0 or null_currencies > 0:
+                print(f'Found null values - Countries: {null_countries}, Currencies: {null_currencies}')
+                sys.exit(1)
+                
+            print(f'Data validation passed - {len(df)} records, {len(df.columns)} columns')
+            
+        except Exception as e:
+            print(f'Data validation failed: {e}')
+            sys.exit(1)
+        "
