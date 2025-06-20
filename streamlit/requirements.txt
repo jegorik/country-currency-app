@@ -1,8 +1,8 @@
-streamlit>=1.30.0
-pandas>=2.0.0
-databricks-connect>=14.0.0
-databricks-sql-connector>=3.0.0
-databricks-sdk>=0.20.0
-PyArrow>=15.0.0
-plotly>=6.0.1
-xlsxwriter>=3.0.0
+streamlit
+pandas
+databricks-connect
+databricks-sql-connector
+databricks-sdk
+PyArrow
+plotly
+xlsxwriter
