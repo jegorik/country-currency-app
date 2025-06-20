@@ -54,23 +54,84 @@ $TerraformDir = Join-Path $ScriptDir "..\terraform"
 $BackendDir = Join-Path $TerraformDir "$Environment-env\backend"
 $DatabricksDir = Join-Path $TerraformDir "$Environment-env\databricks-ifra"
 
-# Check if the vars file has a path separator, if not, look for it in both directories
-if ($TerraformVarsFile -notmatch [regex]::Escape([IO.Path]::DirectorySeparatorChar)) {
-    # Try to find the vars file in the backend directory first, then databricks directory
-    $BackendVarsFile = Join-Path $BackendDir $TerraformVarsFile
-    $DatabricksVarsFile = Join-Path $DatabricksDir $TerraformVarsFile
+# Global variable for found vars file
+$VarsFile = ""
+
+# Function to find terraform vars file (universal logic)
+function Find-VarsFile {
+    $BackendDir = Join-Path $TerraformDir "$Environment-env\backend"
+    $DatabricksDir = Join-Path $TerraformDir "$Environment-env\databricks-ifra"
+    $EnvRootDir = Join-Path $TerraformDir "$Environment-env"
     
-    if (Test-Path $BackendVarsFile) {
-        $VarsFile = $BackendVarsFile
-    } elseif (Test-Path $DatabricksVarsFile) {
-        $VarsFile = $DatabricksVarsFile
-    } else {
-        # Default to the old behavior for backwards compatibility
-        $VarsFile = Join-Path $TerraformDir $TerraformVarsFile
+    # Initialize VarsFile as empty
+    $script:VarsFile = ""
+    
+    # Case 1: User provided a path (contains "\" or "/")
+    if ($TerraformVarsFile -match "[\\\/]") {
+        $UserProvidedPath = Join-Path $ScriptDir $TerraformVarsFile
+        if (Test-Path $UserProvidedPath) {
+            $script:VarsFile = $UserProvidedPath
+            Write-ColorOutput "📁 Using user-provided vars file: $($script:VarsFile)" "Cyan"
+        } else {
+            Write-ColorOutput "❌ User-provided vars file not found: $UserProvidedPath" "Red"
+            exit 1
+        }
     }
-} else {
-    # User provided a path, use it as-is relative to script directory
-    $VarsFile = Join-Path $ScriptDir $TerraformVarsFile
+    # Case 2: User provided filename only (e.g., terraform.tfvars or terraform-prod.tfvars)
+    elseif ($TerraformVarsFile -ne "terraform.tfvars") {
+        # User provided a specific filename, look for it in standard locations
+        $BackendVarsFile = Join-Path $BackendDir $TerraformVarsFile
+        $DatabricksVarsFile = Join-Path $DatabricksDir $TerraformVarsFile
+        $EnvRootVarsFile = Join-Path $EnvRootDir $TerraformVarsFile
+        
+        if (Test-Path $BackendVarsFile) {
+            $script:VarsFile = $BackendVarsFile
+        } elseif (Test-Path $DatabricksVarsFile) {
+            $script:VarsFile = $DatabricksVarsFile
+        } elseif (Test-Path $EnvRootVarsFile) {
+            $script:VarsFile = $EnvRootVarsFile
+        } else {
+            Write-ColorOutput "❌ Specified vars file '$TerraformVarsFile' not found in any standard location" "Red"
+            exit 1
+        }
+        Write-ColorOutput "📁 Using specified vars file: $($script:VarsFile)" "Cyan"
+    }
+    # Case 3: Default behavior (no specific file provided)
+    else {
+        # Look for terraform.tfvars in multiple locations and collect all valid files
+        $FoundFiles = @()
+        
+        # Check backend directory
+        $BackendVarsPath = Join-Path $BackendDir $TerraformVarsFile
+        if (Test-Path $BackendVarsPath) {
+            $FoundFiles += $BackendVarsPath
+        }
+        
+        # Check databricks directory
+        $DatabricksVarsPath = Join-Path $DatabricksDir $TerraformVarsFile
+        if (Test-Path $DatabricksVarsPath) {
+            $FoundFiles += $DatabricksVarsPath
+        }
+        
+        # Check environment root directory
+        $EnvRootVarsPath = Join-Path $EnvRootDir $TerraformVarsFile
+        if (Test-Path $EnvRootVarsPath) {
+            $FoundFiles += $EnvRootVarsPath
+        }
+        
+        if ($FoundFiles.Count -eq 0) {
+            # No files found, set to first preference for error reporting
+            $script:VarsFile = Join-Path $BackendDir $TerraformVarsFile
+            Write-ColorOutput "⚠️  No terraform.tfvars files found in standard locations" "Yellow"
+        } else {
+            # Files found - we'll use all of them for configuration validation
+            $script:VarsFile = $FoundFiles[0]  # Set primary file for prerequisites check
+            Write-ColorOutput "📁 Found terraform.tfvars files: $($FoundFiles.Count)" "Cyan"
+            foreach ($file in $FoundFiles) {
+                Write-ColorOutput "   - $file" "Gray"
+            }
+        }
+    }
 }
 
 # Function to write colored output
@@ -86,30 +147,63 @@ function Write-ColorOutput {
 function Test-Prerequisites {
     Write-ColorOutput "🔍 Checking prerequisites..." "Yellow"
     
+    $AllGood = $true
+    
     # Check if Terraform is installed
     try {
-        $terraformVersion = terraform version
-        Write-ColorOutput "✅ Terraform found: $($terraformVersion[0])" "Green"
+        $terraformVersion = terraform version | Select-Object -First 1
+        Write-ColorOutput "✅ Terraform found: $terraformVersion" "Green"
     }
     catch {
         Write-ColorOutput "❌ Terraform not found. Please install Terraform >= 1.0" "Red"
-        exit 1
+        $AllGood = $false
     }
     
     # Check if AWS CLI is installed
     try {
         $awsVersion = aws --version
-        Write-ColorOutput "✅ AWS CLI found: $($awsVersion.Split()[0])" "Green"
+        $awsVersionShort = ($awsVersion -split ' ')[0]
+        Write-ColorOutput "✅ AWS CLI found: $awsVersionShort" "Green"
+        
+        # Check AWS credentials
+        try {
+            $awsAccount = aws sts get-caller-identity --query Account --output text 2>$null
+            $awsRegion = aws configure get region 2>$null
+            if (-not $awsRegion) { $awsRegion = "not-set" }
+            Write-ColorOutput "✅ AWS credentials configured (Account: $awsAccount, Region: $awsRegion)" "Green"
+        }
+        catch {
+            Write-ColorOutput "❌ AWS credentials not configured" "Red"
+            $AllGood = $false
+        }
     }
     catch {
         Write-ColorOutput "❌ AWS CLI not found. Please install and configure AWS CLI" "Red"
-        exit 1
+        $AllGood = $false
+    }
+    
+    # Check if Databricks CLI is installed (optional)
+    try {
+        $databricksVersion = databricks --version 2>$null
+        Write-ColorOutput "✅ Databricks CLI found: $databricksVersion" "Green"
+    }
+    catch {
+        Write-ColorOutput "⚠️  Databricks CLI not found" "Yellow"
+        Write-ColorOutput "   Install with: pip install databricks-cli" "Gray"
+        Write-ColorOutput "   This is optional but recommended for full validation" "Gray"
     }
     
     # Check if terraform.tfvars exists
     if (-not (Test-Path $VarsFile)) {
         Write-ColorOutput "❌ Terraform variables file not found: $VarsFile" "Red"
         Write-ColorOutput "Please copy terraform.tfvars.example to terraform.tfvars and configure it" "Yellow"
+        $AllGood = $false
+    } else {
+        Write-ColorOutput "✅ Variables file found: $VarsFile" "Green"
+    }
+    
+    if (-not $AllGood) {
+        Write-ColorOutput "❌ Prerequisites check failed" "Red"
         exit 1
     }
     
@@ -120,28 +214,41 @@ function Test-Prerequisites {
 function Deploy-Backend {
     Write-ColorOutput "🚀 Deploying backend infrastructure..." "Cyan"
     
-    Set-Location $BackendDir
+    Push-Location $BackendDir
     
-    # Use backend-specific vars file if it exists, otherwise use the discovered vars file
-    $BackendVarsFile = Join-Path $BackendDir $TerraformVarsFile
-    $ActualVarsFile = if (Test-Path $BackendVarsFile) { $BackendVarsFile } else { $VarsFile }
-    
-    Write-ColorOutput "Using variables file: $ActualVarsFile" "Gray"
-    
-    Write-ColorOutput "Initializing Terraform..." "Yellow"
-    terraform init
-    
-    Write-ColorOutput "Planning deployment..." "Yellow"
-    terraform plan -var-file="$ActualVarsFile"
-    
-    Write-ColorOutput "Applying configuration..." "Yellow"
-    terraform apply -var-file="$ActualVarsFile" -auto-approve
-    
-    if ($LASTEXITCODE -eq 0) {
+    try {
+        # Use backend-specific vars file if it exists, otherwise use the discovered vars file
+        $BackendVarsFile = Join-Path $BackendDir $TerraformVarsFile
+        $ActualVarsFile = if (Test-Path $BackendVarsFile) { $BackendVarsFile } else { $VarsFile }
+        
+        Write-ColorOutput "Using variables file: $ActualVarsFile" "Gray"
+        
+        Write-ColorOutput "Initializing Terraform..." "Yellow"
+        terraform init
+        if ($LASTEXITCODE -ne 0) {
+            throw "Terraform init failed"
+        }
+        
+        Write-ColorOutput "Planning deployment..." "Yellow"
+        terraform plan -var-file="$ActualVarsFile"
+        if ($LASTEXITCODE -ne 0) {
+            throw "Terraform plan failed"
+        }
+        
+        Write-ColorOutput "Applying configuration..." "Yellow"
+        terraform apply -var-file="$ActualVarsFile" -auto-approve
+        if ($LASTEXITCODE -ne 0) {
+            throw "Terraform apply failed"
+        }
+        
         Write-ColorOutput "✅ Backend infrastructure deployed successfully" "Green"
-    } else {
-        Write-ColorOutput "❌ Backend deployment failed" "Red"
-        exit 1
+    }
+    catch {
+        Write-ColorOutput "❌ Backend deployment failed: $($_.Exception.Message)" "Red"
+        throw
+    }
+    finally {
+        Pop-Location
     }
 }
 
@@ -149,32 +256,45 @@ function Deploy-Backend {
 function Deploy-Databricks {
     Write-ColorOutput "🚀 Deploying Databricks infrastructure..." "Cyan"
     
-    Set-Location $DatabricksDir
+    Push-Location $DatabricksDir
     
-    # Use databricks-specific vars file if it exists, otherwise use the discovered vars file
-    $DatabricksVarsFile = Join-Path $DatabricksDir $TerraformVarsFile
-    $ActualVarsFile = if (Test-Path $DatabricksVarsFile) { $DatabricksVarsFile } else { $VarsFile }
-    
-    Write-ColorOutput "Using variables file: $ActualVarsFile" "Gray"
-    
-    Write-ColorOutput "Initializing Terraform..." "Yellow"
-    terraform init
-    
-    Write-ColorOutput "Planning deployment..." "Yellow"
-    terraform plan -var-file="$ActualVarsFile"
-    
-    Write-ColorOutput "Applying configuration..." "Yellow"
-    terraform apply -var-file="$ActualVarsFile" -auto-approve
-    
-    if ($LASTEXITCODE -eq 0) {
+    try {
+        # Use databricks-specific vars file if it exists, otherwise use the discovered vars file
+        $DatabricksVarsFile = Join-Path $DatabricksDir $TerraformVarsFile
+        $ActualVarsFile = if (Test-Path $DatabricksVarsFile) { $DatabricksVarsFile } else { $VarsFile }
+        
+        Write-ColorOutput "Using variables file: $ActualVarsFile" "Gray"
+        
+        Write-ColorOutput "Initializing Terraform..." "Yellow"
+        terraform init
+        if ($LASTEXITCODE -ne 0) {
+            throw "Terraform init failed"
+        }
+        
+        Write-ColorOutput "Planning deployment..." "Yellow"
+        terraform plan -var-file="$ActualVarsFile"
+        if ($LASTEXITCODE -ne 0) {
+            throw "Terraform plan failed"
+        }
+        
+        Write-ColorOutput "Applying configuration..." "Yellow"
+        terraform apply -var-file="$ActualVarsFile" -auto-approve
+        if ($LASTEXITCODE -ne 0) {
+            throw "Terraform apply failed"
+        }
+        
         Write-ColorOutput "✅ Databricks infrastructure deployed successfully" "Green"
         
         # Display outputs
         Write-ColorOutput "📊 Deployment Summary:" "Cyan"
         terraform output
-    } else {
-        Write-ColorOutput "❌ Databricks deployment failed" "Red"
-        exit 1
+    }
+    catch {
+        Write-ColorOutput "❌ Databricks deployment failed: $($_.Exception.Message)" "Red"
+        throw
+    }
+    finally {
+        Pop-Location
     }
 }
 
@@ -185,28 +305,55 @@ function Destroy-Infrastructure {
     
     if ($confirmation -ne "DESTROY") {
         Write-ColorOutput "❌ Destruction cancelled" "Yellow"
-        exit 0
+        return
     }
     
-    # Destroy Databricks infrastructure first
-    Write-ColorOutput "🗑️  Destroying Databricks infrastructure..." "Red"
-    Set-Location $DatabricksDir
-    $DatabricksVarsFile = Join-Path $DatabricksDir $TerraformVarsFile
-    $ActualVarsFile = if (Test-Path $DatabricksVarsFile) { $DatabricksVarsFile } else { $VarsFile }
-    terraform destroy -var-file="$ActualVarsFile" -auto-approve
-    
-    # Destroy backend infrastructure
-    Write-ColorOutput "🗑️  Destroying backend infrastructure..." "Red"
-    Set-Location $BackendDir
-    $BackendVarsFile = Join-Path $BackendDir $TerraformVarsFile
-    $ActualVarsFile = if (Test-Path $BackendVarsFile) { $BackendVarsFile } else { $VarsFile }
-    terraform destroy -var-file="$ActualVarsFile" -auto-approve
-    
-    Write-ColorOutput "✅ Infrastructure destroyed" "Green"
+    try {
+        # Destroy Databricks infrastructure first
+        Write-ColorOutput "🗑️  Destroying Databricks infrastructure..." "Red"
+        Push-Location $DatabricksDir
+        
+        try {
+            $DatabricksVarsFile = Join-Path $DatabricksDir $TerraformVarsFile
+            $ActualVarsFile = if (Test-Path $DatabricksVarsFile) { $DatabricksVarsFile } else { $VarsFile }
+            terraform destroy -var-file="$ActualVarsFile" -auto-approve
+            if ($LASTEXITCODE -ne 0) {
+                Write-ColorOutput "⚠️  Databricks destruction had issues but continuing..." "Yellow"
+            }
+        }
+        finally {
+            Pop-Location
+        }
+        
+        # Destroy backend infrastructure
+        Write-ColorOutput "🗑️  Destroying backend infrastructure..." "Red"
+        Push-Location $BackendDir
+        
+        try {
+            $BackendVarsFile = Join-Path $BackendDir $TerraformVarsFile
+            $ActualVarsFile = if (Test-Path $BackendVarsFile) { $BackendVarsFile } else { $VarsFile }
+            terraform destroy -var-file="$ActualVarsFile" -auto-approve
+            if ($LASTEXITCODE -ne 0) {
+                Write-ColorOutput "⚠️  Backend destruction had issues" "Yellow"
+            }
+        }
+        finally {
+            Pop-Location
+        }
+        
+        Write-ColorOutput "✅ Infrastructure destruction completed" "Green"
+    }
+    catch {
+        Write-ColorOutput "❌ Destruction failed: $($_.Exception.Message)" "Red"
+        throw
+    }
 }
 
 # Main execution
 try {
+    # Find vars file using universal logic
+    Find-VarsFile
+    
     Write-ColorOutput "🎯 Starting deployment process..." "Cyan"
     Write-ColorOutput "Action: $Action" "White"
     Write-ColorOutput "Environment: $Environment" "White"
@@ -239,6 +386,6 @@ try {
     Write-ColorOutput "❌ Deployment failed: $($_.Exception.Message)" "Red"
     exit 1
 } finally {
-    # Return to original directory
+    # Return to original directory (cleanup)
     Set-Location $ScriptDir
 }
