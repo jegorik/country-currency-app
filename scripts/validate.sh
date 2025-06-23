@@ -87,6 +87,42 @@ write_color_output() {
     echo -e "${color}${message}${NC}"
 }
 
+# Function to mask sensitive information in logs
+mask_sensitive_info() {
+    local input="$1"
+    local mask_type="${2:-default}"
+    
+    case $mask_type in
+        "aws_account")
+            # Mask AWS account ID (show first 3 and last 3 digits)
+            echo "$input" | sed -E 's/([0-9]{3})[0-9]{6}([0-9]{3})/\1******\2/g'
+            ;;
+        "url")
+            # Mask URLs (show protocol and domain suffix only)
+            echo "$input" | sed -E 's|(https?://)[^.]+\.([^/]+)|\1***.\2|g'
+            ;;
+        "bucket")
+            # Mask S3 bucket names (show prefix and suffix)
+            echo "$input" | sed -E 's/([a-z0-9-]{1,8})[a-z0-9-]+([a-z0-9-]{1,8})/\1***\2/g'
+            ;;
+        "path")
+            # Mask file paths (show only relative structure)
+            echo "$input" | sed -E 's|/home/[^/]+/[^/]+/[^/]+|/***|g'
+            ;;
+        *)
+            # Default masking - replace middle characters
+            local length=${#input}
+            if [[ $length -le 8 ]]; then
+                echo "***"
+            else
+                local prefix=${input:0:3}
+                local suffix=${input: -3}
+                echo "${prefix}***${suffix}"
+            fi
+            ;;
+    esac
+}
+
 # Function to parse command line arguments
 parse_args() {
     while [[ $# -gt 0 ]]; do
@@ -197,7 +233,8 @@ find_vars_file() {
             VARS_FILE="${found_files[0]}"  # Set primary file for prerequisites check
             write_color_output "📁 Found terraform.tfvars files: ${#found_files[@]}" "$CYAN"
             for file in "${found_files[@]}"; do
-                write_color_output "   - $file" "$GRAY"
+                local masked_path=$(mask_sensitive_info "$file" "path")
+                write_color_output "   - $masked_path" "$GRAY"
             done
         fi
     fi
@@ -227,7 +264,8 @@ check_prerequisites() {
         if aws sts get-caller-identity &>/dev/null; then
             local aws_account=$(aws sts get-caller-identity --query Account --output text 2>/dev/null)
             local aws_region=$(aws configure get region 2>/dev/null || echo "not-set")
-            write_color_output "✅ AWS credentials configured (Account: $aws_account, Region: $aws_region)" "$GREEN"
+            local masked_account=$(mask_sensitive_info "$aws_account" "aws_account")
+            write_color_output "✅ AWS credentials configured (Account: $masked_account, Region: $aws_region)" "$GREEN"
         else
             write_color_output "❌ AWS credentials not configured" "$RED"
             all_good=false
@@ -285,7 +323,8 @@ validate_backend_state() {
     
     if [[ -f "$backend_config_file" ]]; then
         bucket_name=$(grep -o 'bucket[[:space:]]*=[[:space:]]*"[^"]*"' "$backend_config_file" | sed 's/.*"\([^"]*\)".*/\1/')
-        write_color_output "   Found S3 backend bucket: $bucket_name" "$GRAY"
+        local masked_bucket=$(mask_sensitive_info "$bucket_name" "bucket")
+        write_color_output "   Found S3 backend bucket: $masked_bucket" "$GRAY"
     fi
     
     # If bucket name not found in backend-config.tf, try to construct it from s3-bucket.tf
@@ -296,7 +335,8 @@ validate_backend_state() {
             local bucket_pattern=$(grep -o 'bucket[[:space:]]*=[[:space:]]*"[^"]*"' "$s3_bucket_file" | sed 's/.*"\([^"]*\)".*/\1/')
             if [[ "$bucket_pattern" == *'${var.environment}'* ]]; then
                 bucket_name=$(echo "$bucket_pattern" | sed "s/\${var.environment}/$ENVIRONMENT/g")
-                write_color_output "   Constructed bucket name: $bucket_name" "$GRAY"
+                local masked_bucket=$(mask_sensitive_info "$bucket_name" "bucket")
+                write_color_output "   Constructed bucket name: $masked_bucket" "$GRAY"
             fi
         fi
     fi
@@ -308,7 +348,8 @@ validate_backend_state() {
     
     # Check if S3 bucket exists using AWS CLI
     if aws s3api head-bucket --bucket "$bucket_name" &>/dev/null; then
-        write_color_output "✅ S3 backend bucket exists: $bucket_name" "$GREEN"
+        local masked_bucket=$(mask_sensitive_info "$bucket_name" "bucket")
+        write_color_output "✅ S3 backend bucket exists: $masked_bucket" "$GREEN"
         
         # Check if bucket has versioning enabled
         local versioning_status=$(aws s3api get-bucket-versioning --bucket "$bucket_name" --query Status --output text 2>/dev/null)
@@ -387,7 +428,8 @@ validate_databricks_state() {
         # Remove any trailing slash that might have been added back
         databricks_host=$(echo "$databricks_host" | sed 's:/*$::')
         
-        write_color_output "   Databricks host: $databricks_host" "$GRAY"
+        local masked_host=$(mask_sensitive_info "$databricks_host" "url")
+        write_color_output "   Databricks host: $masked_host" "$GRAY"
         write_color_output "   Catalog: $catalog_name" "$GRAY"
         write_color_output "   Schema: $schema_name" "$GRAY"
     else
@@ -532,7 +574,8 @@ validate_data_file() {
     local record_count=$(tail -n +2 "$DATA_FILE" | wc -l)
     local header_line=$(head -n 1 "$DATA_FILE")
     
-    write_color_output "✅ Data file found: $DATA_FILE" "$GREEN"
+    local masked_data_path=$(mask_sensitive_info "$DATA_FILE" "path")
+    write_color_output "✅ Data file found: $masked_data_path" "$GREEN"
     write_color_output "   Records: $record_count" "$GRAY"
     write_color_output "   Columns: $header_line" "$GRAY"
     
@@ -694,8 +737,10 @@ main() {
     
     write_color_output "🎯 Starting validation process..." "$CYAN"
     write_color_output "Environment: $ENVIRONMENT" "$WHITE"
-    write_color_output "Backend config: ${TERRAFORM_DIR}/${ENVIRONMENT}-env/backend/${TERRAFORM_VARS_FILE}" "$WHITE"
-    write_color_output "Databricks config: ${TERRAFORM_DIR}/${ENVIRONMENT}-env/databricks-ifra/${TERRAFORM_VARS_FILE}" "$WHITE"
+    local masked_backend_path=$(mask_sensitive_info "${TERRAFORM_DIR}/${ENVIRONMENT}-env/backend/${TERRAFORM_VARS_FILE}" "path")
+    local masked_databricks_path=$(mask_sensitive_info "${TERRAFORM_DIR}/${ENVIRONMENT}-env/databricks-ifra/${TERRAFORM_VARS_FILE}" "path")
+    write_color_output "Backend config: $masked_backend_path" "$WHITE"
+    write_color_output "Databricks config: $masked_databricks_path" "$WHITE"
     write_color_output "Data validation: $CHECK_DATA" "$WHITE"
     write_color_output "========================================" "$WHITE"
     

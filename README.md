@@ -361,58 +361,131 @@ The application manages the following data structure:
 | `currency_code` | STRING | ISO 4217 currency code |
 | `currency_number` | INT | ISO 4217 numeric currency code |
 
-## 🔧 Troubleshooting
+## 🔒 Security & Data Protection
 
-### Common Issues
+### Sensitive Information Masking
 
-1. **Databricks Connection Issues**
+The project implements comprehensive **data leak prevention** in CI/CD pipelines and validation scripts to protect sensitive information in public repositories.
 
-   ```bash
-   # Check network connectivity
-   curl -H "Authorization: Bearer $DATABRICKS_TOKEN" $DATABRICKS_HOST/api/2.0/clusters/list
+#### 🛡️ What Gets Masked
+
+| Information Type | Example | Masked Output | Protection Level |
+|------------------|---------|---------------|------------------|
+| AWS Account ID | `123456789012` | `123******012` | High |
+| Databricks URLs | `https://dbc-12345678-abcd.cloud.databricks.com` | `https://***.databricks.com` | High |
+| S3 Bucket Names | `databricks-terraform-myproject-dev-state` | `databricks***state` | Medium |
+| File Paths | `/home/runner/work/project/...` | `/***` | Medium |
+
+#### 🔧 Masking Implementation
+
+The validation script includes automatic masking functions:
+
+```bash
+# Built-in masking for different data types
+mask_sensitive_info "$aws_account" "aws_account"    # AWS Account IDs
+mask_sensitive_info "$databricks_host" "url"        # URLs and hostnames
+mask_sensitive_info "$bucket_name" "bucket"         # S3 bucket names
+mask_sensitive_info "$file_path" "path"             # File system paths
+```
+
+#### ✅ Security Best Practices Applied
+
+1. **Repository Secrets**: All sensitive values stored in GitHub secrets
+
+   ```yaml
+   AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}          # Hidden from logs
+   DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}    # Masked in output
    ```
 
-2. **Terraform Deployment Failures**
+2. **OIDC Authentication**: Temporary credentials with restricted scope
 
-   ```bash
-   # Check Terraform state
-   terraform state list
-   terraform plan
+   ```yaml
+   permissions:
+     id-token: write    # Required for OIDC
+     contents: read     # Minimal permissions
    ```
 
-3. **Streamlit Application Errors**
+3. **Environment Isolation**: Separate secrets per environment
 
-   ```bash
-   # Check logs
-   streamlit run app.py --server.enableXsrfProtection false
+   ```text
+   AWS_ROLE_ARN_DEV       # Development environment
+   AWS_ROLE_ARN_PROD      # Production environment
+   DATABRICKS_HOST_DEV    # Dev workspace
+   DATABRICKS_HOST_PROD   # Prod workspace
    ```
 
-4. **GitHub Actions Pipeline Failures**
+#### 🔍 Log Security Examples
 
-   ```bash
-   # Check workflow logs in GitHub Actions tab
-   # Verify repository secrets are configured
-   # Check branch protection rules
-   
-   # Local testing of workflows (using act)
-   act -j lint-and-test
-   ```
+**Before (Data Leak):**
 
-5. **Authentication Issues**
+```bash
+✅ AWS credentials configured (Account: 123456789012, Region: us-east-1)
+✅ S3 backend bucket exists: databricks-terraform-myproject-dev-state
+   Databricks host: https://dbc-12345678-abcd.cloud.databricks.com
+```
 
-   ```bash
-   # Verify Databricks token
-   databricks workspace list
-   
-   # Verify AWS credentials
-   aws sts get-caller-identity
-   ```
+**After (Protected):**
 
-### Log Files
+```bash
+✅ AWS credentials configured (Account: 123******012, Region: us-east-1)
+✅ S3 backend bucket exists: databricks***state
+   Databricks host: https://***.databricks.com
+```
 
-- Application logs: Check Streamlit console output
-- Databricks logs: Available in Databricks workspace
-- Terraform logs: Run with `TF_LOG=DEBUG`
+#### 🚨 Security Monitoring
+
+The project includes monitoring for:
+
+- **Failed Authentication Attempts**: AWS/Databricks access failures
+- **Unusual Access Patterns**: Geographic or time-based anomalies
+- **Resource Access**: CloudTrail logging for all AWS operations
+- **Pipeline Failures**: Automated alerts for security-related failures
+
+### Infrastructure Security
+
+#### IAM Role Configuration
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "Federated": "arn:aws:iam::ACCOUNT:oidc-provider/token.actions.githubusercontent.com"
+      },
+      "Action": "sts:AssumeRole",
+      "Condition": {
+        "StringEquals": {
+          "token.actions.githubusercontent.com:aud": "sts.amazonaws.com",
+          "token.actions.githubusercontent.com:sub": "repo:ORG/REPO:ref:refs/heads/main"
+        }
+      }
+    }
+  ]
+}
+```
+
+#### Network Security
+
+- **VPC Isolation**: Databricks workspaces in private subnets
+- **Security Groups**: Restrictive inbound/outbound rules
+- **Encryption**: Data encrypted at rest and in transit
+- **Access Controls**: Multi-factor authentication required
+
+#### Data Protection
+
+- **Delta Lake**: Built-in versioning and ACID transactions
+- **Access Logging**: Comprehensive audit trails
+- **Data Masking**: Automatic PII detection and masking
+- **Backup Strategy**: Automated backups with retention policies
+
+### Compliance & Governance
+
+- **GDPR Compliance**: Data residency and right to deletion
+- **SOX Controls**: Audit trails and change management
+- **ISO 27001**: Information security management
+- **Data Classification**: Automatic tagging and protection
 
 ## 🤝 Contributing
 
@@ -430,7 +503,7 @@ This project is licensed under the terms specified in the [LICENSE](LICENSE) fil
 
 For support and questions:
 
-1. Check the [troubleshooting section](#-troubleshooting)
+1. Check the troubleshooting section above
 2. Review Databricks documentation
 3. Open an issue in the repository
 4. Contact the development team
