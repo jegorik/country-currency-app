@@ -104,3 +104,4 @@ exports/
 # =============================================================================
 docs/_build/
 site/
+/streamlit/databricks_connection.json
