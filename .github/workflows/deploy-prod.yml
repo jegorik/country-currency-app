@@ -48,7 +48,6 @@ jobs:
       run: |
         echo "🚨 Production deployment requires manual approval"
         echo "Version to deploy: ${{ github.event.inputs.version }}"
-
   deploy:
     name: 'Deploy Production Environment'
     runs-on: ubuntu-latest
@@ -63,14 +62,16 @@ jobs:
     - name: Configure AWS credentials using OIDC
       uses: aws-actions/configure-aws-credentials@v4
       with:
-        role-to-assume: ${{ secrets.AWS_ROLE_ARN_PROD }}
+        role-to-assume: ${{ vars.AWS_ROLE_ARN_PROD }}
         role-session-name: GitHubActions-Prod-Deploy-${{ github.run_id }}
         aws-region: ${{ env.AWS_REGION }}
 
     - name: Verify AWS Identity
       run: |
         echo "🔐 Current AWS Identity for Production:"
-        aws sts get-caller-identity    - name: Setup Terraform
+        aws sts get-caller-identity
+
+    - name: Setup Terraform
       uses: hashicorp/setup-terraform@v3
       with:
         terraform_version: '1.5.0'
