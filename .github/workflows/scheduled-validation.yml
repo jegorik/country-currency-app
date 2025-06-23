@@ -14,6 +14,7 @@ jobs:
   health-check:
     name: 'Infrastructure Health Check'
     runs-on: ubuntu-latest
+    timeout-minutes: 10  # Add timeout to prevent cancellation
     strategy:
       matrix:
         environment: [dev, staging, prod]
