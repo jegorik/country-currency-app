@@ -22,7 +22,7 @@ databricks_host  = "https://your-workspace.cloud.databricks.com"
 databricks_token = "your-databricks-token-here"
 
 # Resource configuration
-catalog_name              = "hive_metastore"  # Use "hive_metastore" for trial accounts
+catalog_name             = "country_currency_metastore"
 schema_name              = "country_currency_schema"
 table_name               = "country_currency_mapping"
 volume_name              = "csv_data_volume"

@@ -1,0 +1,284 @@
+/* Enhanced CSS for the Country Currency App - Dark Theme */
+
+/* Main container styling */
+.main {
+    background-color: #121212;
+    color: #e0e0e0;
+    padding: 20px;
+}
+
+/* Headers styling */
+h1 {
+    color: #4da6ff;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    text-align: center;
+    padding: 20px 0;
+    border-bottom: 2px solid #4da6ff;
+    margin-bottom: 30px;
+}
+
+/* Button alignment fix */
+.button-align-container {
+    display: flex;
+    align-items: flex-end;
+    height: 92px; /* Adjust this value as needed to align with input field */
+}
+
+h2, h3 {
+    color: #4da6ff;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    padding: 10px 0;
+}
+
+/* Form styling */
+.stForm {
+    background-color: #2d2d2d;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+/* Button styling */
+.stButton>button {
+    background-color: #4da6ff;
+    color: #121212;
+    border-radius: 5px;
+    padding: 10px 24px;
+    font-weight: bold;
+    border: none;
+    transition: all 0.3s ease;
+}
+
+.stButton>button:hover {
+    background-color: #3498db;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+}
+
+/* Delete button styling */
+.delete-btn>button {
+    background-color: #e74c3c;
+}
+
+.delete-btn>button:hover {
+    background-color: #c0392b;
+}
+
+/* Input fields styling */
+.stTextInput>div>div>input {
+    background-color: #3d3d3d;
+    color: #e0e0e0;
+    border-radius: 5px;
+    border: 1px solid #555;
+    padding: 10px;
+}
+
+/* Selectbox styling */
+.stSelectbox>div>div>div {
+    background-color: #3d3d3d;
+    color: #e0e0e0;
+}
+
+/* Dataframe styling */
+.dataframe-container {
+    background-color: #2d2d2d;
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    margin: 20px 0;
+}
+
+/* Tab styling */
+.stTabs [data-baseweb="tab-list"] {
+    gap: 2px;
+    background-color: #1e1e1e;
+}
+
+.stTabs [data-baseweb="tab"] {
+    height: 50px;
+    white-space: pre-wrap;
+    background-color: #2d2d2d;
+    color: #e0e0e0;
+    border-radius: 4px 4px 0 0;
+    gap: 1px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+
+.stTabs [aria-selected="true"] {
+    background-color: #4da6ff;
+    color: #ffffff;
+}
+
+/* Card styling */
+.card {
+    background-color: #2d2d2d;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Field label styling */
+.field-label {
+    font-weight: bold;
+    margin-bottom: 5px;
+    color: #4da6ff;
+}
+
+.field-help {
+    font-size: 0.85em;
+    margin-bottom: 10px;
+    color: #a0a0a0;
+}
+
+/* Section header styling */
+.section-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #444;
+    padding-bottom: 10px;
+}
+
+.section-header-icon {
+    font-size: 24px;
+    margin-right: 10px;
+    color: #4da6ff;
+}
+
+/* Message styling */
+.success-message {
+    background-color: #2ecc71;
+    color: white;
+    padding: 10px;
+    border-radius: 5px;
+    margin: 10px 0;
+}
+
+.error-message {
+    background-color: #e74c3c;
+    color: white;
+    padding: 10px;
+    border-radius: 5px;
+    margin: 10px 0;
+}
+
+.warning-message {
+    background-color: #f39c12;
+    color: #1a1a1a;
+    padding: 10px;
+    border-radius: 5px;
+    margin: 10px 0;
+}
+
+.info-box {
+    background-color: #3498db;
+    color: white;
+    padding: 10px;
+    border-radius: 5px;
+    margin: 10px 0;
+}
+
+.confirmation-message {
+    background-color: #FF8C00;
+    color: white;
+    padding: 15px;
+    border-radius: 5px;
+    margin: 20px 0;
+}
+
+/* Tooltip styling */
+.tooltip {
+    position: relative;
+    display: inline-block;
+    border-bottom: 1px dotted #4da6ff;
+    cursor: help;
+}
+
+.tooltip .tooltiptext {
+    visibility: hidden;
+    width: 200px;
+    background-color: #555;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px;
+    position: absolute;
+    z-index: 1;
+    bottom: 125%;
+    left: 50%;
+    margin-left: -100px;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.tooltip:hover .tooltiptext {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* Loader styling */
+.loader-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.loader {
+    border: 5px solid #f3f3f3;
+    border-radius: 50%;
+    border-top: 5px solid #4da6ff;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin-bottom: 10px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Dark theme overrides for standard Streamlit components */
+.stApp {
+    background-color: #121212;
+}
+
+.stSidebar {
+    background-color: #1e1e1e;
+}
+
+.stTextInput > div > div > input {
+    color: #e0e0e0;
+}
+
+.stTextInput > label {
+    color: #e0e0e0;
+}
+
+.stNumberInput > div > div > input {
+    color: #e0e0e0;
+}
+
+.stNumberInput > label {
+    color: #e0e0e0;
+}
+
+.stSelectbox > div > div > div {
+    color: #e0e0e0;
+}
+
+.stDataFrame {
+    background-color: #2d2d2d;
+}
+
+/* Footer styling */
+footer {
+    margin-top: 50px;
+    padding-top: 20px;
+    border-top: 1px solid #444;
+    text-align: center;
+    color: #7f8c8d;
+}

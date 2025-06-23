@@ -1,0 +1,170 @@
+name: 'Deploy to Development'
+
+on:
+  push:
+    branches: [ develop ]
+    paths:
+      - 'terraform/**'
+      - 'scripts/**'
+      - 'etl_data/**'
+      - 'notebooks/**'
+  workflow_dispatch:
+    inputs:
+      destroy_first:
+        description: 'Destroy existing infrastructure first'
+        required: false
+        default: 'false'
+        type: boolean
+
+env:
+  ENVIRONMENT: 'dev'
+  AWS_REGION: 'eu-central-1'  # Updated based on your terraform.tfvars
+
+# Required for OIDC
+permissions:
+  id-token: write   # This is required for requesting the JWT
+  contents: read    # This is required for actions/checkout
+
+jobs:
+  deploy:
+    name: 'Deploy Development Environment'
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Configure AWS credentials using OIDC
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ secrets.AWS_ROLE_ARN_DEV }}
+        role-session-name: GitHubActions-Dev-Deploy-${{ github.run_id }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Verify AWS Identity
+      run: |
+        echo "Current AWS Identity:"
+        aws sts get-caller-identity
+        echo "Available S3 buckets:"
+        aws s3 ls || echo "No S3 access or no buckets"
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: '1.5.0'
+
+    - name: Create Terraform Variables File
+      run: |
+        cat > terraform/dev-env/terraform.tfvars << EOF
+        # Databricks connectivity
+        databricks_host = "${{ secrets.DATABRICKS_HOST_DEV }}"
+        databricks_token = "${{ secrets.DATABRICKS_TOKEN_DEV }}"
+        databricks_warehouse_id = "${{ secrets.DATABRICKS_WAREHOUSE_ID_DEV }}"
+        
+        # Resource configuration
+        catalog_name = "${{ vars.CATALOG_NAME_DEV || 'country_currency_dev' }}"
+        schema_name = "${{ vars.SCHEMA_NAME_DEV || 'country_currency_schema' }}"
+        table_name = "${{ vars.TABLE_NAME_DEV || 'country_currency_mapping' }}"
+        volume_name = "${{ vars.VOLUME_NAME_DEV || 'csv_data_volume' }}"
+        
+        # Project configuration
+        environment = "${{ env.ENVIRONMENT }}"
+        project_name = "${{ vars.PROJECT_NAME || 'country-currency-mapping' }}"
+        app_name = "${{ vars.APP_NAME || 'country-currency-app' }}"
+        
+        # AWS Configuration
+        aws_region = "${{ env.AWS_REGION }}"
+        
+        # Optional settings
+        skip_validation = false
+        
+        # Tags
+        tags = {
+          "owner" = "github-actions"
+          "environment" = "${{ env.ENVIRONMENT }}"
+          "cost-center" = "dev-department"
+          "deployed-by" = "github-actions"
+          "deployment-id" = "${{ github.run_id }}"
+        }
+        EOF
+
+    - name: Show Terraform Variables (Masked)
+      run: |
+        echo "Generated terraform.tfvars (sensitive values masked):"
+        sed 's/dapi[a-zA-Z0-9]*/dapi***MASKED***/g' terraform/dev-env/terraform.tfvars
+
+    - name: Destroy Infrastructure (if requested)
+      if: ${{ github.event.inputs.destroy_first == 'true' }}
+      working-directory: terraform/dev-env
+      run: |
+        echo "🚨 Destroying existing infrastructure..."
+        
+        # Destroy Databricks first
+        cd databricks-ifra
+        terraform init
+        terraform destroy -var-file="../terraform.tfvars" -auto-approve
+        
+        # Then destroy backend
+        cd ../backend  
+        terraform init
+        terraform destroy -var-file="../terraform.tfvars" -auto-approve
+
+    - name: Deploy Backend Infrastructure
+      working-directory: terraform/dev-env/backend
+      run: |
+        echo "🚀 Deploying backend infrastructure..."
+        terraform init
+        terraform plan -var-file="../terraform.tfvars"
+        terraform apply -var-file="../terraform.tfvars" -auto-approve
+
+    - name: Deploy Databricks Infrastructure
+      working-directory: terraform/dev-env/databricks-ifra
+      run: |
+        echo "🚀 Deploying Databricks infrastructure..."
+        terraform init
+        terraform plan -var-file="../terraform.tfvars"
+        terraform apply -var-file="../terraform.tfvars" -auto-approve
+
+    - name: Run Validation
+      shell: pwsh
+      run: |
+        echo "🔍 Running post-deployment validation..."
+        
+        # Set PowerShell to continue on errors for better error handling
+        $ErrorActionPreference = "Continue"
+        
+        try {
+          # Run validation script
+          $result = ./scripts/validate.ps1 -Environment dev -CheckData
+          
+          if ($LASTEXITCODE -ne 0) {
+            Write-Error "Validation failed with exit code: $LASTEXITCODE"
+            exit 1
+          }
+          
+          Write-Host "✅ All validations passed!" -ForegroundColor Green
+        }
+        catch {
+          Write-Error "Validation script failed: $($_.Exception.Message)"
+          exit 1
+        }
+
+    - name: Upload Terraform State Artifact
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: terraform-state-dev-${{ github.run_id }}
+        path: |
+          terraform/dev-env/backend/.terraform/
+          terraform/dev-env/databricks-ifra/.terraform/
+        retention-days: 30
+
+    - name: Deployment Summary
+      if: always()
+      run: |
+        echo "## 📊 Deployment Summary" >> $GITHUB_STEP_SUMMARY
+        echo "- **Environment**: ${{ env.ENVIRONMENT }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **AWS Region**: ${{ env.AWS_REGION }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Deployment ID**: ${{ github.run_id }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Status**: ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Triggered by**: ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY

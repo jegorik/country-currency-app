@@ -1,0 +1,174 @@
+name: 'Deploy to Production'
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version/Tag to deploy'
+        required: true
+        type: string
+      confirm_production:
+        description: 'Type "DEPLOY-PROD" to confirm'
+        required: true
+        type: string
+
+env:
+  ENVIRONMENT: 'prod'
+  AWS_REGION: 'eu-central-1'
+
+# Required for OIDC
+permissions:
+  id-token: write   # This is required for requesting the JWT
+  contents: read    # This is required for actions/checkout
+
+jobs:
+  validate-input:
+    name: 'Validate Deployment Input'
+    runs-on: ubuntu-latest
+    steps:
+    - name: Validate Confirmation
+      run: |
+        if [ "${{ github.event.inputs.confirm_production }}" != "DEPLOY-PROD" ]; then
+          echo "❌ Production deployment not confirmed"
+          echo "Please type 'DEPLOY-PROD' exactly to confirm"
+          exit 1
+        else
+          echo "✅ Production deployment confirmed"
+        fi
+
+  approval:
+    name: 'Await Approval'
+    runs-on: ubuntu-latest
+    needs: validate-input
+    environment: 
+      name: production
+      url: https://dbc-763fd307-c0f3.cloud.databricks.com  # Your actual Databricks URL
+    steps:
+    - name: Manual Approval Gate
+      run: |
+        echo "🚨 Production deployment requires manual approval"
+        echo "Version to deploy: ${{ github.event.inputs.version }}"
+
+  deploy:
+    name: 'Deploy Production Environment'
+    runs-on: ubuntu-latest
+    needs: approval
+    
+    steps:
+    - name: Checkout Specific Version
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ github.event.inputs.version }}
+
+    - name: Configure AWS credentials using OIDC
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ secrets.AWS_ROLE_ARN_PROD }}
+        role-session-name: GitHubActions-Prod-Deploy-${{ github.run_id }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Verify AWS Identity
+      run: |
+        echo "🔐 Current AWS Identity for Production:"
+        aws sts get-caller-identity
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: '1.5.0'
+
+    - name: Create Production Variables
+      run: |
+        cat > terraform/prod-env/terraform.tfvars << EOF
+        # Databricks connectivity
+        databricks_host = "${{ secrets.DATABRICKS_HOST_PROD }}"
+        databricks_token = "${{ secrets.DATABRICKS_TOKEN_PROD }}"
+        databricks_warehouse_id = "${{ secrets.DATABRICKS_WAREHOUSE_ID_PROD }}"
+        
+        # Resource configuration
+        catalog_name = "${{ vars.CATALOG_NAME_PROD || 'country_currency_prod' }}"
+        schema_name = "${{ vars.SCHEMA_NAME_PROD || 'country_currency_schema' }}"
+        table_name = "${{ vars.TABLE_NAME_PROD || 'country_currency_mapping' }}"
+        volume_name = "${{ vars.VOLUME_NAME_PROD || 'csv_data_volume' }}"
+        
+        # Project configuration
+        environment = "${{ env.ENVIRONMENT }}"
+        project_name = "${{ vars.PROJECT_NAME || 'country-currency-mapping' }}"
+        app_name = "${{ vars.APP_NAME || 'country-currency-app' }}"
+        
+        # AWS Configuration
+        aws_region = "${{ env.AWS_REGION }}"
+        
+        # Production settings
+        skip_validation = false
+        
+        # Tags
+        tags = {
+          "owner" = "github-actions"
+          "environment" = "${{ env.ENVIRONMENT }}"
+          "cost-center" = "production"
+          "deployed-by" = "github-actions"
+          "deployment-id" = "${{ github.run_id }}"
+          "version" = "${{ github.event.inputs.version }}"
+        }
+        EOF
+
+    - name: Terraform Plan
+      working-directory: terraform/prod-env/databricks-ifra
+      run: |
+        echo "📋 Planning production deployment..."
+        terraform init
+        terraform plan -var-file="../terraform.tfvars" -out=tfplan
+
+    - name: Apply Infrastructure
+      working-directory: terraform/prod-env/databricks-ifra
+      run: |
+        echo "🚀 Applying production deployment..."
+        terraform apply tfplan
+
+    - name: Production Validation
+      shell: pwsh
+      run: |
+        echo "🔍 Running production validation..."
+        
+        try {
+          $result = ./scripts/validate.ps1 -Environment prod -CheckData
+          
+          if ($LASTEXITCODE -ne 0) {
+            Write-Error "Production validation failed!"
+            exit 1
+          }
+          
+          Write-Host "✅ Production validation successful!" -ForegroundColor Green
+        }
+        catch {
+          Write-Error "Production validation error: $($_.Exception.Message)"
+          exit 1
+        }
+
+    - name: Notify Success
+      if: success()
+      uses: 8398a7/action-slack@v3
+      with:
+        status: success
+        text: |
+          ✅ **Production Deployment Successful**
+          - Version: ${{ github.event.inputs.version }}
+          - Environment: ${{ env.ENVIRONMENT }}
+          - Deployed by: ${{ github.actor }}
+          - Deployment ID: ${{ github.run_id }}
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
+
+    - name: Notify Failure
+      if: failure()
+      uses: 8398a7/action-slack@v3
+      with:
+        status: failure
+        text: |
+          ❌ **Production Deployment Failed**
+          - Version: ${{ github.event.inputs.version }}
+          - Environment: ${{ env.ENVIRONMENT }}
+          - Check logs: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}

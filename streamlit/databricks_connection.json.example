@@ -1,0 +1,16 @@
+{
+  "databricks_host": "https://your-workspace.cloud.databricks.com",
+  "catalog_name": "main",
+  "schema_name": "default",
+  "table_name": "country_currency",
+  "databricks_warehouse_id": "your-warehouse-id",
+  "environment": "dev",
+  "project_name": "country-currency-project",
+  "deployment_info": {
+    "etl_job_id": "job-id-placeholder",
+    "etl_notebook_path": "/Workspace/notebook/path",
+    "full_table_path": "main.default.country_currency",
+    "created_at": "2025-06-23T00:00:00Z"
+  },
+  "security_note": "Token not included for security. Provide manually or via environment variables."
+}

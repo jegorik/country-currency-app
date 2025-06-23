@@ -1,0 +1,8 @@
+streamlit
+pandas
+databricks-connect
+databricks-sql-connector
+databricks-sdk
+PyArrow
+plotly
+xlsxwriter
