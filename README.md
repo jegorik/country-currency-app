@@ -1,312 +1,451 @@
-# Country Currency Mapping Data Pipeline
+# Country Currency Mapping Project (CCP)
 
-A comprehensive data pipeline for loading and managing country-to-currency mapping data using Databricks and Terraform. This project provides infrastructure-as-code deployment and automated data processing capabilities.
+A comprehensive data engineering solution for managing country-to-currency mappings using Databricks, Streamlit, and Terraform. This project provides a complete ETL pipeline with a modern web interface for data visualization and CRUD operations.
 
-## 🚀 Project Overview
+## 🌟 Features
 
-This project implements an end-to-end data pipeline that:
+- **📊 Modern Streamlit Dashboard**: Interactive web interface for data visualization and management
+- **🔄 Complete ETL Pipeline**: Automated data processing using Databricks notebooks
+- **🏗️ Infrastructure as Code**: Terraform-based deployment for AWS and Databricks resources
+- **🎯 CRUD Operations**: Full Create, Read, Update, Delete functionality
+- **📈 Data Visualization**: Interactive charts and analytics using Plotly
+- **📋 Batch Operations**: Upload and process data in batches
+- **🔍 Advanced Filtering**: Search and filter capabilities
+- **🌐 Cross-Platform Support**: Works on Windows and Linux environments
+- **📱 Responsive Design**: Mobile-friendly dark theme interface
+- **🚀 CI/CD Pipeline**: Automated testing and deployment with GitHub Actions
 
-- **Extracts** country-currency mapping data from CSV files
-- **Transforms** and validates the data with quality checks
-- **Loads** the data into Databricks Delta tables
-- **Manages** infrastructure using Terraform automation
+## 🏗️ Architecture
 
-### Key Features
-
-- ✅ **Infrastructure as Code**: Complete Terraform automation for Databricks resources
-- ✅ **Cross-Platform Support**: Works on Windows and Linux environments
-- ✅ **Data Quality Validation**: Built-in data quality checks and validation
-- ✅ **Modular Design**: Reusable components and functions
-- ✅ **Error Handling**: Comprehensive error handling and logging
-- ✅ **State Management**: S3 backend for Terraform state storage
-- ✅ **Parameterized Execution**: Flexible configuration through widgets
+```text
+┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
+│   Streamlit     │    │    Databricks    │    │   Terraform     │
+│   Frontend      │◄──►│    Backend       │◄──►│Infrastructure   │
+│                 │    │                  │    │                 │
+│ • Dashboard     │    │ • Delta Tables   │    │ • AWS S3        │
+│ • CRUD Ops      │    │ • ETL Notebooks  │    │ • Databricks    │
+│ • Visualizations│    │ • SQL Warehouse  │    │ • Resources     │
+└─────────────────┘    └──────────────────┘    └─────────────────┘
+```
 
 ## 📁 Project Structure
 
-```bash
-New_app_databriks/
-├── etl_data/                          # Source data files
+```text
+Updated_CCP/
+├── 📊 streamlit/              # Streamlit web application
+│   ├── app.py                 # Main application entry point
+│   ├── requirements.txt       # Python dependencies
+│   ├── config/                # Configuration management
+│   ├── models/                # Data models
+│   ├── operations/            # Data operations
+│   ├── ui/                    # User interface components
+│   ├── utils/                 # Utility functions
+│   └── templates/             # HTML templates
+├── 📓 notebooks/              # Databricks notebooks
+│   └── load_notebook_jupyter.ipynb  # ETL pipeline notebook
+├── 🗂️ etl_data/               # Source data files
 │   └── country_code_to_currency_code.csv
-├── notebooks/                         # Databricks notebooks
-│   └── load_notebook_jupyter.ipynb    # Main ETL notebook
-├── scripts/                           # Utility scripts (currently empty)
-├── terraform/                         # Infrastructure as Code
-│   ├── terraform.tfvars.example       # Configuration template
-│   └── dev-env/
-│       ├── backend/                   # S3 backend infrastructure
-│       │   ├── s3-bucket.tf          # S3 bucket for state storage
-│       │   ├── variables.tf          # Backend variables
-│       │   ├── providers.tf          # AWS provider config
-│       │   └── outputs.tf            # Backend outputs
-│       └── databricks-ifra/           # Main Databricks infrastructure
-│           ├── databricks.tf         # Core Databricks resources
-│           ├── variables.tf          # Input variables
-│           ├── providers.tf          # Provider configurations
-│           ├── outputs.tf            # Resource outputs
-│           └── backend-config.tf     # S3 backend configuration
-└── README.md                         # This file
+├── 🏗️ terraform/              # Infrastructure as Code
+│   ├── dev-env/               # Development environment
+│   │   ├── backend/           # S3 backend configuration
+│   │   └── databricks-ifra/   # Databricks infrastructure
+│   └── terraform.tfvars.example
+├── 🔧 scripts/                # Deployment scripts
+│   ├── deploy.sh              # Automated deployment
+│   └── validate.sh            # Infrastructure validation
+├── 🚀 .github/workflows/      # GitHub Actions CI/CD
+│   ├── ci.yml                 # Continuous Integration
+│   ├── deploy.yml             # Deployment pipeline
+│   └── terraform.yml          # Infrastructure validation
+└── 📄 README.md               # Project documentation
 ```
-
-## 🛠️ Prerequisites
-
-### Required Tools
-
-- [Terraform](https://terraform.io/) >= 1.0
-- [Databricks CLI](https://docs.databricks.com/dev-tools/cli/index.html) (optional)
-- AWS CLI configured with appropriate permissions
-- PowerShell (Windows) or Bash (Linux/macOS)
-
-### Required Access
-
-- **Databricks Workspace**: Access to a Databricks workspace
-- **Databricks Token**: Personal access token for API authentication
-- **SQL Warehouse**: An existing SQL warehouse in your Databricks workspace
-- **AWS Account**: Access to create S3 buckets for state storage
 
 ## 🚀 Quick Start
 
-### 1. Configure Terraform Variables
+### Prerequisites
+
+- Python 3.8+
+- Terraform >= 1.0
+- AWS CLI configured
+- Databricks workspace access
+- Git
+
+### 1. Clone the Repository
+
+```bash
+git clone <repository-url>
+cd Updated_CCP
+```
+
+### 2. Set Up Environment
+
+```bash
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install Python dependencies
+cd streamlit
+pip install -r requirements.txt
+```
+
+### 3. Configure Databricks Connection
 
 ```bash
 # Copy the example configuration
-cp terraform/terraform.tfvars.example terraform/terraform.tfvars
+cp databricks_connection.json.example databricks_connection.json
 
-# Edit the configuration file with your specific values
-# Update the following key parameters:
-# - databricks_host: Your Databricks workspace URL
-# - databricks_token: Your personal access token
-# - databricks_warehouse_id: Your SQL warehouse ID
-# - aws_region: Your preferred AWS region
+# Edit with your Databricks details
+nano databricks_connection.json
 ```
 
-### 2. Deploy Backend Infrastructure
+### 4. Deploy Infrastructure
 
 ```bash
-# Navigate to backend directory
-cd terraform/dev-env/backend
+# Copy Terraform variables
+cd ../terraform
+cp terraform.tfvars.example terraform.tfvars
 
-# Initialize and apply backend infrastructure
-terraform init
-terraform plan
-terraform apply
+# Edit with your AWS and Databricks configuration
+nano terraform.tfvars
+
+# Deploy infrastructure
+chmod +x ../scripts/deploy.sh
+../scripts/deploy.sh -a all -e dev
 ```
 
-### 3. Deploy Databricks Infrastructure
+### 5. Run the Application
 
 ```bash
-# Navigate to Databricks infrastructure directory
-cd ../databricks-ifra
-
-# Initialize and apply Databricks resources
-terraform init
-terraform plan
-terraform apply
+cd ../streamlit
+streamlit run app.py
 ```
 
-### 4. Verify Deployment
+The application will be available at `http://localhost:8501`
 
-After successful deployment, check your Databricks workspace for:
+## 📋 Configuration
 
-- Created schema and volume
-- Uploaded CSV data file
-- Deployed notebook
-- Configured and executed job
+### Databricks Configuration
 
-## 📋 Configuration Reference
+Edit `streamlit/databricks_connection.json`:
 
-### Core Configuration Variables
+```json
+{
+  "databricks_host": "https://your-workspace.cloud.databricks.com",
+  "catalog_name": "main",
+  "schema_name": "default",
+  "table_name": "country_currency",
+  "databricks_warehouse_id": "your-warehouse-id",
+  "environment": "dev"
+}
+```
 
-| Variable | Description | Default | Required |
-|----------|-------------|---------|----------|
-| `databricks_host` | Databricks workspace URL | - | ✅ |
-| `databricks_token` | Personal access token | - | ✅ |
-| `databricks_warehouse_id` | SQL warehouse ID | - | ✅ |
-| `catalog_name` | Unity Catalog name | `hive_metastore` | ✅ |
-| `schema_name` | Schema name | - | ✅ |
-| `table_name` | Target table name | - | ✅ |
-| `volume_name` | Volume name for CSV files | - | ✅ |
-| `aws_region` | AWS region | - | ✅ |
+### Terraform Configuration
 
-### Optional Configuration
+Edit `terraform/terraform.tfvars`:
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `environment` | Environment name (dev/staging/prod) | `dev` |
-| `project_name` | Project identifier | - |
-| `app_name` | Application name | `country-currency-app` |
-| `skip_validation` | Skip resource validation | `false` |
-| `create_schema` | Create new schema | `true` |
-| `create_volume` | Create new volume | `true` |
-| `create_table` | Create new table | `true` |
-| `upload_csv` | Upload CSV file | `true` |
+```hcl
+# Databricks connectivity
+databricks_host  = "https://your-workspace.cloud.databricks.com"
+databricks_token = "your-databricks-token-here"
+
+# Resource configuration
+catalog_name             = "country_currency_metastore"
+schema_name              = "country_currency_schema"
+table_name               = "country_currency_mapping"
+volume_name              = "csv_data_volume"
+databricks_warehouse_id  = "your-warehouse-id-here"
+```
+
+## 🎯 Usage
+
+### Dashboard Features
+
+1. **📊 Data Overview**: View summary statistics and data health metrics
+2. **🔍 Data Explorer**: Browse and filter country-currency mappings
+3. **📈 Visualizations**: Interactive charts and analytics
+4. **✏️ CRUD Operations**: Add, edit, and delete records
+5. **📤 Batch Upload**: Upload CSV files for bulk data processing
+6. **🔄 Data Refresh**: Real-time data synchronization
+
+### ETL Pipeline
+
+The ETL pipeline processes country-currency mapping data:
+
+1. **Extract**: Reads CSV data from Databricks volume
+2. **Transform**: Validates and cleans data
+3. **Load**: Stores data in Delta table format
+
+Run the ETL pipeline:
+
+```bash
+# Via Databricks job (automated)
+# Or run the notebook manually in Databricks workspace
+```
+
+### API Operations
+
+The application supports programmatic access through the Databricks SQL connector:
+
+```python
+from utils.databricks_client import DatabricksClient
+
+client = DatabricksClient(config)
+data = client.query("SELECT * FROM country_currency_mapping")
+```
+
+## 🛠️ Development
+
+### Local Development Setup
+
+```bash
+# Install development dependencies
+pip install -r requirements.txt
+
+# Run in development mode
+streamlit run app.py --server.runOnSave true
+```
+
+### GitHub Actions CI/CD
+
+This project includes automated workflows for continuous integration and deployment:
+
+#### Workflow Files
+
+- `.github/workflows/ci.yml` - Continuous Integration pipeline
+- `.github/workflows/deploy.yml` - Deployment pipeline
+- `.github/workflows/terraform.yml` - Infrastructure validation
+
+#### CI Pipeline Features
+
+- **Code Quality**: Automated linting and formatting checks
+- **Security Scanning**: Dependency vulnerability scanning
+- **Testing**: Unit tests and integration tests
+- **Build Validation**: Streamlit application build verification
+- **Terraform Validation**: Infrastructure code validation
+
+#### Deployment Pipeline
+
+- **Environment-based Deployment**: Separate workflows for dev/staging/prod
+- **Infrastructure Deployment**: Automated Terraform apply
+- **Application Deployment**: Streamlit app deployment
+- **Rollback Capabilities**: Automatic rollback on deployment failures
+
+#### Setting Up GitHub Actions
+
+1. **Repository Secrets**: Configure the following secrets in your GitHub repository:
+
+   ```text
+   DATABRICKS_HOST           # Your Databricks workspace URL
+   DATABRICKS_TOKEN          # Databricks personal access token
+   AWS_ACCESS_KEY_ID         # AWS access key for Terraform
+   AWS_SECRET_ACCESS_KEY     # AWS secret key for Terraform
+   TERRAFORM_CLOUD_TOKEN     # Terraform Cloud API token (if using)
+   ```
+
+2. **Environment Variables**: Set up environment-specific variables:
+
+   ```yaml
+   # In .github/workflows/deploy.yml
+   env:
+     TF_VAR_environment: ${{ github.ref_name }}
+     TF_VAR_databricks_host: ${{ secrets.DATABRICKS_HOST }}
+     TF_VAR_databricks_token: ${{ secrets.DATABRICKS_TOKEN }}
+   ```
+
+3. **Branch Protection**: Configure branch protection rules:
+   - Require pull request reviews
+   - Require status checks to pass
+   - Require branches to be up to date
+
+#### Workflow Triggers
+
+- **Pull Requests**: Run CI checks on all PRs
+- **Main Branch**: Deploy to staging environment
+- **Release Tags**: Deploy to production environment
+- **Manual Trigger**: Allow manual deployments with environment selection
+
+#### Example Workflow Structure
+
+```yaml
+# .github/workflows/ci.yml
+name: CI Pipeline
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main, develop]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+      - name: Install dependencies
+        run: |
+          pip install -r streamlit/requirements.txt
+          pip install flake8 black pytest
+      - name: Lint code
+        run: |
+          flake8 streamlit/
+          black --check streamlit/
+      - name: Run tests
+        run: pytest tests/
+
+  terraform-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive terraform/
+      - name: Terraform Validate
+        run: |
+          cd terraform/dev-env/databricks-ifra
+          terraform init -backend=false
+          terraform validate
+```
+
+### Adding New Features
+
+1. **UI Components**: Add to `streamlit/ui/`
+2. **Data Operations**: Extend `streamlit/operations/data_operations.py`
+3. **Utilities**: Add to `streamlit/utils/`
+4. **Configuration**: Update `streamlit/config/app_config.py`
+
+### Testing
+
+```bash
+# Validate infrastructure
+./scripts/validate.sh
+
+# Run application tests
+python -m pytest tests/  # (if tests directory exists)
+```
+
+## 🚀 Deployment
+
+### Development Environment
+
+```bash
+./scripts/deploy.sh -a all -e dev
+```
+
+### Production Environment
+
+```bash
+./scripts/deploy.sh -a all -e prod -v terraform-prod.tfvars
+```
+
+### Destroy Infrastructure
+
+```bash
+./scripts/deploy.sh -a destroy -e dev
+```
 
 ## 📊 Data Schema
 
-The pipeline processes CSV data with the following structure:
+The application manages the following data structure:
 
-| Column | Type | Description | Example |
-|--------|------|-------------|---------|
-| `country_code` | STRING | ISO 3166-1 alpha-3 country code | `USA` |
-| `country_number` | INT | ISO 3166-1 numeric country code | `840` |
-| `country` | STRING | Full country name | `UNITED STATES` |
-| `currency_name` | STRING | Official currency name | `US Dollar` |
-| `currency_code` | STRING | ISO 4217 currency code | `USD` |
-| `currency_number` | INT | ISO 4217 numeric currency code | `840` |
+| Column | Type | Description |
+|--------|------|-------------|
+| `country_code` | STRING | ISO 3166-1 alpha-3 country code |
+| `country_number` | INT | ISO 3166-1 numeric country code |
+| `country` | STRING | Full country name |
+| `currency_name` | STRING | Official currency name |
+| `currency_code` | STRING | ISO 4217 currency code |
+| `currency_number` | INT | ISO 4217 numeric currency code |
 
-## 🔧 Advanced Usage
-
-### Working with Existing Resources
-
-If you have existing Databricks resources, you can configure the pipeline to use them:
-
-```hcl
-# In terraform.tfvars
-create_schema = false  # Use existing schema
-create_volume = false  # Use existing volume
-create_table = false   # Use existing table
-upload_csv = false     # Skip CSV upload
-
-skip_validation = true # Skip warehouse validation
-```
-
-### Custom Data Sources
-
-To use your own CSV data:
-
-1. Replace the CSV file in `etl_data/country_code_to_currency_code.csv`
-2. Update the notebook if your data has a different schema
-3. Redeploy the infrastructure
-
-### Environment-Specific Deployments
-
-Create environment-specific configurations:
-
-```bash
-# Create environment-specific tfvars files
-cp terraform.tfvars terraform-dev.tfvars
-cp terraform.tfvars terraform-prod.tfvars
-
-# Deploy to specific environment
-terraform apply -var-file="terraform-dev.tfvars"
-```
-
-## 🧪 Testing and Validation
-
-### Data Quality Checks
-
-The notebook includes automated data quality checks:
-
-- **Null Value Detection**: Identifies null values in key columns
-- **Record Count Validation**: Ensures all records are loaded successfully
-- **Schema Validation**: Verifies data types and structure
-
-### Manual Verification
-
-After deployment, verify the pipeline by:
-
-1. **Check Databricks Workspace**: Confirm resources are created
-2. **Review Job Execution**: Check job run status and logs
-3. **Query the Data**: Validate data in the Delta table
-
-```sql
--- Sample query to verify data
-SELECT 
-    COUNT(*) as total_records,
-    COUNT(DISTINCT country_code) as unique_countries,
-    COUNT(DISTINCT currency_code) as unique_currencies
-FROM your_catalog.your_schema.your_table;
-```
-
-## 🔍 Troubleshooting
+## 🔧 Troubleshooting
 
 ### Common Issues
 
-**Issue**: Terraform fails with authentication error
+1. **Databricks Connection Issues**
 
-- **Solution**: Verify `databricks_token` and `databricks_host` are correct
+   ```bash
+   # Check network connectivity
+   curl -H "Authorization: Bearer $DATABRICKS_TOKEN" $DATABRICKS_HOST/api/2.0/clusters/list
+   ```
 
-**Issue**: SQL warehouse not found
+2. **Terraform Deployment Failures**
 
-- **Solution**: Check `databricks_warehouse_id` exists and is accessible
+   ```bash
+   # Check Terraform state
+   terraform state list
+   terraform plan
+   ```
 
-**Issue**: CSV upload fails
+3. **Streamlit Application Errors**
 
-- **Solution**: Ensure the volume exists and has proper permissions
+   ```bash
+   # Check logs
+   streamlit run app.py --server.enableXsrfProtection false
+   ```
 
-**Issue**: Job execution fails
+4. **GitHub Actions Pipeline Failures**
 
-- **Solution**: Check notebook parameters and SQL warehouse status
+   ```bash
+   # Check workflow logs in GitHub Actions tab
+   # Verify repository secrets are configured
+   # Check branch protection rules
+   
+   # Local testing of workflows (using act)
+   act -j lint-and-test
+   ```
 
-### Debug Commands
+5. **Authentication Issues**
 
-```bash
-# Check Terraform state
-terraform show
+   ```bash
+   # Verify Databricks token
+   databricks workspace list
+   
+   # Verify AWS credentials
+   aws sts get-caller-identity
+   ```
 
-# Validate configuration
-terraform validate
+### Log Files
 
-# Plan without applying
-terraform plan
-
-# Check Databricks CLI connectivity
-databricks workspace list
-```
-
-## 📈 Monitoring and Maintenance
-
-### Resource Monitoring
-
-Monitor your deployment through:
-
-- **Databricks Workspace**: Job runs, cluster usage, storage metrics
-- **AWS Console**: S3 bucket usage, costs
-- **Terraform State**: Resource drift detection
-
-### Regular Maintenance
-
-- **Update Dependencies**: Keep Terraform providers updated
-- **Review Costs**: Monitor AWS and Databricks usage costs
-- **Backup State**: Ensure Terraform state is backed up
-- **Security Review**: Rotate tokens and review permissions regularly
+- Application logs: Check Streamlit console output
+- Databricks logs: Available in Databricks workspace
+- Terraform logs: Run with `TF_LOG=DEBUG`
 
 ## 🤝 Contributing
 
-To contribute to this project:
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/new-feature`
+3. Commit changes: `git commit -am 'Add new feature'`
+4. Push to branch: `git push origin feature/new-feature`
+5. Submit a Pull Request
 
-1. **Fork** the repository
-2. **Create** a feature branch (`git checkout -b feature/amazing-feature`)
-3. **Commit** your changes (`git commit -m 'Add amazing feature'`)
-4. **Push** to the branch (`git push origin feature/amazing-feature`)
-5. **Open** a Pull Request
+## 📄 License
 
-### Development Guidelines
+This project is licensed under the terms specified in the [LICENSE](LICENSE) file.
 
-- Add comments to all Terraform resources
-- Include validation rules for variables
-- Test changes in a development environment
-- Update documentation for new features
-
-## 📜 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 📞 Support
+## 🆘 Support
 
 For support and questions:
 
-- **Issues**: Use GitHub Issues for bug reports and feature requests
-- **Documentation**: Check this README and inline code comments
-- **Databricks Docs**: [Official Databricks Documentation](https://docs.databricks.com/)
-- **Terraform Docs**: [Terraform Databricks Provider](https://registry.terraform.io/providers/databricks/databricks/latest/docs)
+1. Check the [troubleshooting section](#-troubleshooting)
+2. Review Databricks documentation
+3. Open an issue in the repository
+4. Contact the development team
 
-## 🏷️ Tags
+## 🎉 Acknowledgments
 
-`databricks` `terraform` `etl` `data-pipeline` `infrastructure-as-code` `aws` `delta-lake` `data-engineering` `automation` `csv-processing`
+- Databricks for the data platform
+- Streamlit for the web framework
+- Terraform for infrastructure automation
+- The open-source community for various libraries and tools
 
 ---
 
-**Last Updated**: May 28, 2025  
-**Version**: 1.0.0  
-**Terraform Version**: >= 1.0  
-**Databricks Provider**: ~> 1.81.0
+### Credits
+
+Built with ❤️ by the Data Engineering Team
+
+Last Updated: June 23, 2025
