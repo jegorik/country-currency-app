@@ -28,8 +28,7 @@ permissions:
 jobs:
   deploy:
     name: 'Deploy Development Environment'
-    runs-on: ubuntu-latest
-    
+    runs-on: ubuntu-latest    
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -37,7 +36,7 @@ jobs:
     - name: Configure AWS credentials using OIDC
       uses: aws-actions/configure-aws-credentials@v4
       with:
-        role-to-assume: ${{ secrets.AWS_ROLE_ARN_DEV }}
+        role-to-assume: ${{ vars.AWS_ROLE_ARN_DEV }}
         role-session-name: GitHubActions-Dev-Deploy-${{ github.run_id }}
         aws-region: ${{ env.AWS_REGION }}
 
@@ -55,6 +54,7 @@ jobs:
 
     - name: Create Terraform Variables File
       run: |
+        # Create the main terraform.tfvars file
         cat > terraform/dev-env/terraform.tfvars << EOF
         # Databricks connectivity
         databricks_host = "${{ secrets.DATABRICKS_HOST_DEV }}"
@@ -84,8 +84,15 @@ jobs:
           "environment" = "${{ env.ENVIRONMENT }}"
           "cost-center" = "dev-department"
           "deployed-by" = "github-actions"
-          "deployment-id" = "${{ github.run_id }}"        }
+          "deployment-id" = "${{ github.run_id }}"
+        }
         EOF
+        
+        # Copy to backend directory for validation script
+        cp terraform/dev-env/terraform.tfvars terraform/dev-env/backend/terraform.tfvars
+        
+        # Copy to databricks-ifra directory for validation script
+        cp terraform/dev-env/terraform.tfvars terraform/dev-env/databricks-ifra/terraform.tfvars
 
     - name: Show Terraform Variables (Masked)
       run: |

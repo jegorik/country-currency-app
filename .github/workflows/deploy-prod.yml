@@ -108,9 +108,14 @@ jobs:
           "cost-center" = "production"
           "deployed-by" = "github-actions"
           "deployment-id" = "${{ github.run_id }}"
-          "version" = "${{ github.event.inputs.version }}"
-        }
+          "version" = "${{ github.event.inputs.version }}"        }
         EOF
+        
+        # Copy to backend directory for validation script
+        cp terraform/prod-env/terraform.tfvars terraform/prod-env/backend/terraform.tfvars
+        
+        # Copy to databricks-ifra directory for validation script
+        cp terraform/prod-env/terraform.tfvars terraform/prod-env/databricks-ifra/terraform.tfvars
 
     - name: Terraform Plan
       working-directory: terraform/prod-env/databricks-ifra
