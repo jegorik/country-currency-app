@@ -32,7 +32,7 @@ jobs:
     - name: Configure AWS credentials using OIDC
       uses: aws-actions/configure-aws-credentials@v4
       with:
-        role-to-assume: ${{ secrets[format('AWS_ROLE_ARN_{0}', upper(matrix.environment))] }}
+        role-to-assume: ${{ vars[format('AWS_ROLE_ARN_{0}', matrix.environment == 'dev' && 'DEV' || matrix.environment == 'staging' && 'STAGING' || 'PROD')] }}
         role-session-name: GitHubActions-HealthCheck-${{ matrix.environment }}-${{ github.run_id }}
         aws-region: ${{ matrix.aws_region }}
 
@@ -40,31 +40,37 @@ jobs:
       run: |
         # Create basic vars file for health check
         cat > terraform/${{ matrix.environment }}-env/terraform.tfvars << EOF
-        databricks_host = "${{ secrets[format('DATABRICKS_HOST_{0}', upper(matrix.environment))] }}"
-        databricks_token = "${{ secrets[format('DATABRICKS_TOKEN_{0}', upper(matrix.environment))] }}"
+        databricks_host = "${{ secrets[format('DATABRICKS_HOST_{0}', matrix.environment == 'dev' && 'DEV' || matrix.environment == 'staging' && 'STAGING' || 'PROD')] }}"
+        databricks_token = "${{ secrets[format('DATABRICKS_TOKEN_{0}', matrix.environment == 'dev' && 'DEV' || matrix.environment == 'staging' && 'STAGING' || 'PROD')] }}"
+        databricks_warehouse_id = "${{ secrets[format('DATABRICKS_WAREHOUSE_ID_{0}', matrix.environment == 'dev' && 'DEV' || matrix.environment == 'staging' && 'STAGING' || 'PROD')] }}"
         aws_region = "${{ matrix.aws_region }}"
         environment = "${{ matrix.environment }}"
+        catalog_name = "${{ vars[format('CATALOG_NAME_{0}', matrix.environment == 'dev' && 'DEV' || matrix.environment == 'staging' && 'STAGING' || 'PROD')] || 'default_catalog' }}"
+        schema_name = "${{ vars[format('SCHEMA_NAME_{0}', matrix.environment == 'dev' && 'DEV' || matrix.environment == 'staging' && 'STAGING' || 'PROD')] || 'default_schema' }}"
+        table_name = "${{ vars[format('TABLE_NAME_{0}', matrix.environment == 'dev' && 'DEV' || matrix.environment == 'staging' && 'STAGING' || 'PROD')] || 'default_table' }}"
+        volume_name = "${{ vars[format('VOLUME_NAME_{0}', matrix.environment == 'dev' && 'DEV' || matrix.environment == 'staging' && 'STAGING' || 'PROD')] || 'default_volume' }}"
+        project_name = "${{ vars.PROJECT_NAME || 'country-currency-pipeline' }}"
+        app_name = "${{ vars.APP_NAME || 'country-currency-app' }}"
+        skip_validation = false
         EOF
+          # Copy to backend and databricks directories for validation script
+        cp terraform/${{ matrix.environment }}-env/terraform.tfvars terraform/${{ matrix.environment }}-env/backend/terraform.tfvars
+        cp terraform/${{ matrix.environment }}-env/terraform.tfvars terraform/${{ matrix.environment }}-env/databricks-ifra/terraform.tfvars
 
     - name: Run Health Check
-      shell: pwsh
       run: |
-        Write-Host "🏥 Running health check for ${{ matrix.environment }} environment..." -ForegroundColor Yellow
+        echo "🏥 Running health check for ${{ matrix.environment }} environment..."
         
-        try {
-          $result = ./scripts/validate.ps1 -Environment ${{ matrix.environment }} -CheckData
-          
-          if ($LASTEXITCODE -ne 0) {
-            Write-Error "Health check failed for ${{ matrix.environment }} environment"
-            exit 1
-          }
-          
-          Write-Host "✅ Health check passed for ${{ matrix.environment }}!" -ForegroundColor Green
-        }
-        catch {
-          Write-Error "Health check error for ${{ matrix.environment }}: $($_.Exception.Message)"
+        # Make the validation script executable
+        chmod +x ./scripts/validate.sh
+        
+        # Run validation with environment and data checks
+        if ./scripts/validate.sh --environment ${{ matrix.environment }} --check-data; then
+          echo "✅ Health check passed for ${{ matrix.environment }}!"
+        else
+          echo "❌ Health check failed for ${{ matrix.environment }} environment"
           exit 1
-        }
+        fi
 
     - name: Report Results
       if: failure()
@@ -77,4 +83,4 @@ jobs:
           - Time: $(date)
           - Check logs: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
       env:
-        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
