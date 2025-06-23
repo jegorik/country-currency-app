@@ -40,13 +40,6 @@ jobs:
         role-session-name: GitHubActions-Dev-Deploy-${{ github.run_id }}
         aws-region: ${{ env.AWS_REGION }}
 
-    - name: Verify AWS Identity
-      run: |
-        echo "Current AWS Identity:"
-        aws sts get-caller-identity
-        echo "Available S3 buckets:"
-        aws s3 ls || echo "No S3 access or no buckets"
-
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v3
       with:
