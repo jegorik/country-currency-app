@@ -33,7 +33,7 @@ jobs:
     - name: Configure AWS credentials using OIDC
       uses: aws-actions/configure-aws-credentials@v4
       with:
-        role-to-assume: ${{ vars[format('AWS_ROLE_ARN_{0}', matrix.environment == 'dev' && 'DEV' || matrix.environment == 'staging' && 'STAGING' || 'PROD')] }}
+        role-to-assume: ${{ matrix.environment == 'dev' && vars.AWS_ROLE_ARN_DEV || matrix.environment == 'staging' && vars.AWS_ROLE_ARN_STAGING || vars.AWS_ROLE_ARN_PROD }}
         role-session-name: GitHubActions-HealthCheck-${{ matrix.environment }}-${{ github.run_id }}
         aws-region: ${{ matrix.aws_region }}
 
@@ -43,18 +43,17 @@ jobs:
         terraform_version: ~1.5
 
     - name: Create Minimal Vars File
-      run: |
-        # Create basic vars file for health check
+      run: |        # Create basic vars file for health check
         cat > terraform/${{ matrix.environment }}-env/terraform.tfvars << EOF
-        databricks_host = "${{ secrets[format('DATABRICKS_HOST_{0}', matrix.environment == 'dev' && 'DEV' || matrix.environment == 'staging' && 'STAGING' || 'PROD')] }}"
-        databricks_token = "${{ secrets[format('DATABRICKS_TOKEN_{0}', matrix.environment == 'dev' && 'DEV' || matrix.environment == 'staging' && 'STAGING' || 'PROD')] }}"
-        databricks_warehouse_id = "${{ secrets[format('DATABRICKS_WAREHOUSE_ID_{0}', matrix.environment == 'dev' && 'DEV' || matrix.environment == 'staging' && 'STAGING' || 'PROD')] }}"
+        databricks_host = "${{ matrix.environment == 'dev' && secrets.DATABRICKS_HOST_DEV || matrix.environment == 'staging' && secrets.DATABRICKS_HOST_STAGING || secrets.DATABRICKS_HOST_PROD }}"
+        databricks_token = "${{ matrix.environment == 'dev' && secrets.DATABRICKS_TOKEN_DEV || matrix.environment == 'staging' && secrets.DATABRICKS_TOKEN_STAGING || secrets.DATABRICKS_TOKEN_PROD }}"
+        databricks_warehouse_id = "${{ matrix.environment == 'dev' && secrets.DATABRICKS_WAREHOUSE_ID_DEV || matrix.environment == 'staging' && secrets.DATABRICKS_WAREHOUSE_ID_STAGING || secrets.DATABRICKS_WAREHOUSE_ID_PROD }}"
         aws_region = "${{ matrix.aws_region }}"
         environment = "${{ matrix.environment }}"
-        catalog_name = "${{ vars[format('CATALOG_NAME_{0}', matrix.environment == 'dev' && 'DEV' || matrix.environment == 'staging' && 'STAGING' || 'PROD')] || 'default_catalog' }}"
-        schema_name = "${{ vars[format('SCHEMA_NAME_{0}', matrix.environment == 'dev' && 'DEV' || matrix.environment == 'staging' && 'STAGING' || 'PROD')] || 'default_schema' }}"
-        table_name = "${{ vars[format('TABLE_NAME_{0}', matrix.environment == 'dev' && 'DEV' || matrix.environment == 'staging' && 'STAGING' || 'PROD')] || 'default_table' }}"
-        volume_name = "${{ vars[format('VOLUME_NAME_{0}', matrix.environment == 'dev' && 'DEV' || matrix.environment == 'staging' && 'STAGING' || 'PROD')] || 'default_volume' }}"
+        catalog_name = "${{ matrix.environment == 'dev' && vars.CATALOG_NAME_DEV || matrix.environment == 'staging' && vars.CATALOG_NAME_STAGING || vars.CATALOG_NAME_PROD || 'default_catalog' }}"
+        schema_name = "${{ matrix.environment == 'dev' && vars.SCHEMA_NAME_DEV || matrix.environment == 'staging' && vars.SCHEMA_NAME_STAGING || vars.SCHEMA_NAME_PROD || 'default_schema' }}"
+        table_name = "${{ matrix.environment == 'dev' && vars.TABLE_NAME_DEV || matrix.environment == 'staging' && vars.TABLE_NAME_STAGING || vars.TABLE_NAME_PROD || 'default_table' }}"
+        volume_name = "${{ matrix.environment == 'dev' && vars.VOLUME_NAME_DEV || matrix.environment == 'staging' && vars.VOLUME_NAME_STAGING || vars.VOLUME_NAME_PROD || 'default_volume' }}"
         project_name = "${{ vars.PROJECT_NAME || 'country-currency-pipeline' }}"
         app_name = "${{ vars.APP_NAME || 'country-currency-app' }}"
         skip_validation = false
