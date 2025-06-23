@@ -66,11 +66,6 @@ jobs:
         role-session-name: GitHubActions-Prod-Deploy-${{ github.run_id }}
         aws-region: ${{ env.AWS_REGION }}
 
-    - name: Verify AWS Identity
-      run: |
-        echo "🔐 Current AWS Identity for Production:"
-        aws sts get-caller-identity
-
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v3
       with:
