@@ -135,7 +135,7 @@ jobs:
         
         try {
           # Run validation script
-          $result = ./scripts/validate.ps1 -Environment dev -CheckData
+          $result = ./scripts/validate.sh -Environment dev -CheckData
           
           if ($LASTEXITCODE -ne 0) {
             Write-Error "Validation failed with exit code: $LASTEXITCODE"

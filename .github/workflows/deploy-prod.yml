@@ -70,9 +70,7 @@ jobs:
     - name: Verify AWS Identity
       run: |
         echo "🔐 Current AWS Identity for Production:"
-        aws sts get-caller-identity
-
-    - name: Setup Terraform
+        aws sts get-caller-identity    - name: Setup Terraform
       uses: hashicorp/setup-terraform@v3
       with:
         terraform_version: '1.5.0'
@@ -127,24 +125,19 @@ jobs:
         terraform apply tfplan
 
     - name: Production Validation
-      shell: pwsh
       run: |
         echo "🔍 Running production validation..."
         
-        try {
-          $result = ./scripts/validate.ps1 -Environment prod -CheckData
-          
-          if ($LASTEXITCODE -ne 0) {
-            Write-Error "Production validation failed!"
-            exit 1
-          }
-          
-          Write-Host "✅ Production validation successful!" -ForegroundColor Green
-        }
-        catch {
-          Write-Error "Production validation error: $($_.Exception.Message)"
+        # Make the validation script executable
+        chmod +x ./scripts/validate.sh
+        
+        # Run validation with production environment and data checks
+        if ./scripts/validate.sh --environment prod --check-data; then
+          echo "✅ Production validation successful!"
+        else
+          echo "❌ Production validation failed!"
           exit 1
-        }
+        fi
 
     - name: Notify Success
       if: success()
@@ -155,10 +148,9 @@ jobs:
           ✅ **Production Deployment Successful**
           - Version: ${{ github.event.inputs.version }}
           - Environment: ${{ env.ENVIRONMENT }}
-          - Deployed by: ${{ github.actor }}
-          - Deployment ID: ${{ github.run_id }}
+          - Deployed by: ${{ github.actor }}          - Deployment ID: ${{ github.run_id }}
       env:
-        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
     - name: Notify Failure
       if: failure()
@@ -168,7 +160,6 @@ jobs:
         text: |
           ❌ **Production Deployment Failed**
           - Version: ${{ github.event.inputs.version }}
-          - Environment: ${{ env.ENVIRONMENT }}
-          - Check logs: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          - Environment: ${{ env.ENVIRONMENT }}          - Check logs: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
       env:
-        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
