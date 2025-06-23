@@ -14,7 +14,7 @@ jobs:
   health-check:
     name: 'Infrastructure Health Check'
     runs-on: ubuntu-latest
-    timeout-minutes: 10  # Add timeout to prevent cancellation
+    timeout-minutes: 5  # Reduce timeout to complete faster
     strategy:
       matrix:
         environment: [dev, staging, prod]
@@ -37,13 +37,18 @@ jobs:
         role-session-name: GitHubActions-HealthCheck-${{ matrix.environment }}-${{ github.run_id }}
         aws-region: ${{ matrix.aws_region }}
 
-    - name: Setup Terraform
-      uses: hashicorp/setup-terraform@v3
-      with:
-        terraform_version: ~1.5
+    - name: Setup Terraform (Alternative)
+      run: |
+        echo "🔧 Installing Terraform directly..."
+        # Use direct installation to avoid action overhead
+        wget -q https://releases.hashicorp.com/terraform/1.5.7/terraform_1.5.7_linux_amd64.zip
+        unzip -q terraform_1.5.7_linux_amd64.zip
+        sudo mv terraform /usr/local/bin/        terraform version
+        echo "✅ Terraform installed successfully"
 
     - name: Create Minimal Vars File
-      run: |        # Create basic vars file for health check
+      run: |
+        # Create basic vars file for health check
         cat > terraform/${{ matrix.environment }}-env/terraform.tfvars << EOF
         databricks_host = "${{ matrix.environment == 'dev' && secrets.DATABRICKS_HOST_DEV || matrix.environment == 'staging' && secrets.DATABRICKS_HOST_STAGING || secrets.DATABRICKS_HOST_PROD }}"
         databricks_token = "${{ matrix.environment == 'dev' && secrets.DATABRICKS_TOKEN_DEV || matrix.environment == 'staging' && secrets.DATABRICKS_TOKEN_STAGING || secrets.DATABRICKS_TOKEN_PROD }}"
@@ -61,6 +66,20 @@ jobs:
         # Copy to backend and databricks directories for validation script
         cp terraform/${{ matrix.environment }}-env/terraform.tfvars terraform/${{ matrix.environment }}-env/backend/terraform.tfvars
         cp terraform/${{ matrix.environment }}-env/terraform.tfvars terraform/${{ matrix.environment }}-env/databricks-ifra/terraform.tfvars
+
+    - name: Debug Runner Environment
+      run: |
+        echo "🔍 Runner Environment Debug:"
+        echo "Runner OS: $(uname -a)"
+        echo "Available memory: $(free -h 2>/dev/null || echo 'N/A')"
+        echo "Available disk: $(df -h . 2>/dev/null || echo 'N/A')"
+        echo "Current user: $(whoami)"
+        echo "Current directory: $(pwd)"
+        echo "Environment: ${{ matrix.environment }}"
+        echo "AWS Region: ${{ matrix.aws_region }}"
+        echo "Running workflows check..."
+        # Check if there are other running workflows
+        ps aux | grep -E "(terraform|aws)" | head -5 || echo "No terraform/aws processes found"
 
     - name: Run Health Check
       run: |
