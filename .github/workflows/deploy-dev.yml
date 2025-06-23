@@ -13,7 +13,7 @@ on:
       destroy_first:
         description: 'Destroy existing infrastructure first'
         required: false
-        default: 'false'
+        default: false
         type: boolean
 
 env:
@@ -28,8 +28,7 @@ permissions:
 jobs:
   deploy:
     name: 'Deploy Development Environment'
-    runs-on: ubuntu-latest
-    
+    runs-on: ubuntu-latest    
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -37,7 +36,7 @@ jobs:
     - name: Configure AWS credentials using OIDC
       uses: aws-actions/configure-aws-credentials@v4
       with:
-        role-to-assume: ${{ secrets.AWS_ROLE_ARN_DEV }}
+        role-to-assume: ${{ vars.AWS_ROLE_ARN_DEV }}
         role-session-name: GitHubActions-Dev-Deploy-${{ github.run_id }}
         aws-region: ${{ env.AWS_REGION }}
 
@@ -55,6 +54,7 @@ jobs:
 
     - name: Create Terraform Variables File
       run: |
+        # Create the main terraform.tfvars file
         cat > terraform/dev-env/terraform.tfvars << EOF
         # Databricks connectivity
         databricks_host = "${{ secrets.DATABRICKS_HOST_DEV }}"
@@ -87,6 +87,12 @@ jobs:
           "deployment-id" = "${{ github.run_id }}"
         }
         EOF
+        
+        # Copy to backend directory for validation script
+        cp terraform/dev-env/terraform.tfvars terraform/dev-env/backend/terraform.tfvars
+        
+        # Copy to databricks-ifra directory for validation script
+        cp terraform/dev-env/terraform.tfvars terraform/dev-env/databricks-ifra/terraform.tfvars
 
     - name: Show Terraform Variables (Masked)
       run: |
@@ -126,28 +132,19 @@ jobs:
         terraform apply -var-file="../terraform.tfvars" -auto-approve
 
     - name: Run Validation
-      shell: pwsh
       run: |
         echo "🔍 Running post-deployment validation..."
         
-        # Set PowerShell to continue on errors for better error handling
-        $ErrorActionPreference = "Continue"
+        # Make the validation script executable
+        chmod +x ./scripts/validate.sh
         
-        try {
-          # Run validation script
-          $result = ./scripts/validate.ps1 -Environment dev -CheckData
-          
-          if ($LASTEXITCODE -ne 0) {
-            Write-Error "Validation failed with exit code: $LASTEXITCODE"
-            exit 1
-          }
-          
-          Write-Host "✅ All validations passed!" -ForegroundColor Green
-        }
-        catch {
-          Write-Error "Validation script failed: $($_.Exception.Message)"
+        # Run validation with development environment and data checks
+        if ./scripts/validate.sh --environment dev --check-data; then
+          echo "✅ All validations passed!"
+        else
+          echo "❌ Validation failed!"
           exit 1
-        }
+        fi
 
     - name: Upload Terraform State Artifact
       uses: actions/upload-artifact@v4

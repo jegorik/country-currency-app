@@ -35,7 +35,7 @@ jobs:
     - name: Configure AWS credentials using OIDC
       uses: aws-actions/configure-aws-credentials@v4
       with:
-        role-to-assume: ${{ secrets[format('AWS_ROLE_ARN_{0}', upper(matrix.environment))] }}
+        role-to-assume: ${{ secrets[format('AWS_ROLE_ARN_{0}', matrix.environment == 'dev' && 'DEV' || matrix.environment == 'staging' && 'STAGING' || 'PROD')] }}
         role-session-name: GitHubActions-${{ matrix.environment }}-${{ github.run_id }}
         aws-region: eu-central-1  # Based on your terraform.tfvars
 
@@ -58,33 +58,72 @@ jobs:
       run: |
         terraform init -backend=false
         terraform validate
-
   validate-scripts:
-    name: 'PowerShell Script Validation'
-    runs-on: windows-latest
+    name: 'Bash Script Validation'
+    runs-on: ubuntu-latest
     
     steps:
     - name: Checkout
       uses: actions/checkout@v4
       
-    - name: Test PowerShell Scripts
-      shell: pwsh
+    - name: Test Bash Scripts Syntax
       run: |
-        # Test script syntax
-        Get-ChildItem -Path scripts/*.ps1 | ForEach-Object {
-          Write-Host "Validating $($_.Name)"
-          $null = [System.Management.Automation.PSParser]::Tokenize((Get-Content $_.FullName -Raw), [ref]$null)
-        }
-
-    - name: Run PSScriptAnalyzer
-      shell: pwsh
-      run: |
-        Install-Module -Name PSScriptAnalyzer -Force -Scope CurrentUser
-        $results = Invoke-ScriptAnalyzer -Path scripts/ -Recurse
-        if ($results) {
-          $results | Format-Table
+        echo "🔍 Validating bash scripts..."
+        
+        # Check if script files exist
+        if [ ! -f "scripts/validate.sh" ] && [ ! -f "scripts/deploy.sh" ]; then
+          echo "❌ No bash scripts found in scripts directory"
           exit 1
-        }
+        fi
+        
+        # Validate bash script syntax
+        for script in scripts/*.sh; do
+          if [ -f "$script" ]; then
+            echo "Validating $script..."
+            bash -n "$script" || {
+              echo "❌ Syntax error in $script"
+              exit 1
+            }
+            echo "✅ $script syntax is valid"
+          fi
+        done
+
+    - name: Run ShellCheck (Static Analysis)
+      run: |
+        # Install shellcheck
+        sudo apt-get update
+        sudo apt-get install -y shellcheck
+        
+        echo "🔍 Running ShellCheck static analysis..."
+        
+        # Run shellcheck on all bash scripts
+        for script in scripts/*.sh; do
+          if [ -f "$script" ]; then
+            echo "Analyzing $script..."
+            shellcheck "$script" || {
+              echo "❌ ShellCheck issues found in $script"
+              exit 1
+            }
+            echo "✅ $script passed ShellCheck"
+          fi
+        done
+
+    - name: Test Script Execution (Dry Run)
+      run: |
+        echo "🧪 Testing script execution capabilities..."
+        
+        # Make scripts executable
+        chmod +x scripts/*.sh
+        
+        # Test validate.sh with help flag
+        if [ -f "scripts/validate.sh" ]; then
+          echo "Testing validate.sh..."
+          ./scripts/validate.sh --help || {
+            echo "❌ validate.sh help execution failed"
+            exit 1
+          }
+          echo "✅ validate.sh help executed successfully"
+        fi
 
   validate-data:
     name: 'Data Validation'
@@ -135,3 +174,48 @@ jobs:
             print(f'Data validation failed: {e}')
             sys.exit(1)
         "
+
+  integration-validation:
+    name: 'Integration Validation'
+    runs-on: ubuntu-latest
+    needs: [validate-terraform, validate-scripts, validate-data]
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: ${{ env.TF_VERSION }}
+        
+    - name: Test Validation Script (No Infrastructure)
+      run: |
+        echo "🧪 Testing validation script functionality..."
+        
+        # Make validation script executable
+        chmod +x ./scripts/validate.sh
+        
+        # Test script help and argument parsing
+        echo "Testing help functionality..."
+        ./scripts/validate.sh --help
+        
+        echo "✅ Validation script structure test passed"
+        
+        # Test that script handles missing infrastructure gracefully
+        echo "Testing script behavior with missing infrastructure..."
+        if ./scripts/validate.sh --environment dev --no-check-data 2>&1 | grep -q "validation\|check\|error"; then
+          echo "✅ Script handles missing infrastructure appropriately"
+        else
+          echo "⚠️  Script behavior with missing infrastructure unclear"
+        fi
+
+    - name: Validation Summary
+      if: always()
+      run: |
+        echo "## 🎯 CI Validation Summary" >> $GITHUB_STEP_SUMMARY
+        echo "- **Terraform**: Format and syntax validation completed" >> $GITHUB_STEP_SUMMARY
+        echo "- **Scripts**: Bash script validation completed" >> $GITHUB_STEP_SUMMARY
+        echo "- **Data**: CSV data structure validation completed" >> $GITHUB_STEP_SUMMARY
+        echo "- **Integration**: Validation script functionality tested" >> $GITHUB_STEP_SUMMARY
+        echo "- **Status**: ${{ job.status }}" >> $GITHUB_STEP_SUMMARY

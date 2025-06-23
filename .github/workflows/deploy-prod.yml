@@ -48,7 +48,6 @@ jobs:
       run: |
         echo "🚨 Production deployment requires manual approval"
         echo "Version to deploy: ${{ github.event.inputs.version }}"
-
   deploy:
     name: 'Deploy Production Environment'
     runs-on: ubuntu-latest
@@ -63,7 +62,7 @@ jobs:
     - name: Configure AWS credentials using OIDC
       uses: aws-actions/configure-aws-credentials@v4
       with:
-        role-to-assume: ${{ secrets.AWS_ROLE_ARN_PROD }}
+        role-to-assume: ${{ vars.AWS_ROLE_ARN_PROD }}
         role-session-name: GitHubActions-Prod-Deploy-${{ github.run_id }}
         aws-region: ${{ env.AWS_REGION }}
 
@@ -109,9 +108,14 @@ jobs:
           "cost-center" = "production"
           "deployed-by" = "github-actions"
           "deployment-id" = "${{ github.run_id }}"
-          "version" = "${{ github.event.inputs.version }}"
-        }
+          "version" = "${{ github.event.inputs.version }}"        }
         EOF
+        
+        # Copy to backend directory for validation script
+        cp terraform/prod-env/terraform.tfvars terraform/prod-env/backend/terraform.tfvars
+        
+        # Copy to databricks-ifra directory for validation script
+        cp terraform/prod-env/terraform.tfvars terraform/prod-env/databricks-ifra/terraform.tfvars
 
     - name: Terraform Plan
       working-directory: terraform/prod-env/databricks-ifra
@@ -127,24 +131,19 @@ jobs:
         terraform apply tfplan
 
     - name: Production Validation
-      shell: pwsh
       run: |
         echo "🔍 Running production validation..."
         
-        try {
-          $result = ./scripts/validate.ps1 -Environment prod -CheckData
-          
-          if ($LASTEXITCODE -ne 0) {
-            Write-Error "Production validation failed!"
-            exit 1
-          }
-          
-          Write-Host "✅ Production validation successful!" -ForegroundColor Green
-        }
-        catch {
-          Write-Error "Production validation error: $($_.Exception.Message)"
+        # Make the validation script executable
+        chmod +x ./scripts/validate.sh
+        
+        # Run validation with production environment and data checks
+        if ./scripts/validate.sh --environment prod --check-data; then
+          echo "✅ Production validation successful!"
+        else
+          echo "❌ Production validation failed!"
           exit 1
-        }
+        fi
 
     - name: Notify Success
       if: success()
@@ -155,10 +154,9 @@ jobs:
           ✅ **Production Deployment Successful**
           - Version: ${{ github.event.inputs.version }}
           - Environment: ${{ env.ENVIRONMENT }}
-          - Deployed by: ${{ github.actor }}
-          - Deployment ID: ${{ github.run_id }}
+          - Deployed by: ${{ github.actor }}          - Deployment ID: ${{ github.run_id }}
       env:
-        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
     - name: Notify Failure
       if: failure()
@@ -168,7 +166,6 @@ jobs:
         text: |
           ❌ **Production Deployment Failed**
           - Version: ${{ github.event.inputs.version }}
-          - Environment: ${{ env.ENVIRONMENT }}
-          - Check logs: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          - Environment: ${{ env.ENVIRONMENT }}          - Check logs: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
       env:
-        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
