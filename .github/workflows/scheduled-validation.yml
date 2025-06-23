@@ -36,6 +36,11 @@ jobs:
         role-session-name: GitHubActions-HealthCheck-${{ matrix.environment }}-${{ github.run_id }}
         aws-region: ${{ matrix.aws_region }}
 
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: ~1.5
+
     - name: Create Minimal Vars File
       run: |
         # Create basic vars file for health check
@@ -53,7 +58,7 @@ jobs:
         app_name = "${{ vars.APP_NAME || 'country-currency-app' }}"
         skip_validation = false
         EOF
-          # Copy to backend and databricks directories for validation script
+        # Copy to backend and databricks directories for validation script
         cp terraform/${{ matrix.environment }}-env/terraform.tfvars terraform/${{ matrix.environment }}-env/backend/terraform.tfvars
         cp terraform/${{ matrix.environment }}-env/terraform.tfvars terraform/${{ matrix.environment }}-env/databricks-ifra/terraform.tfvars
 
