@@ -1,9 +1,9 @@
 name: 'Scheduled Infrastructure Health Check'
 
-on:
-  schedule:
-    - cron: '0 8 * * MON-FRI'  # Weekdays at 8 AM UTC
-  workflow_dispatch:
+#on:
+#  schedule:
+#    - cron: '0 8 * * MON-FRI'  # Weekdays at 8 AM UTC
+#  workflow_dispatch:
 
 # Required for OIDC
 permissions:
